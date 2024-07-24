@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StatusBar, TextInput, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, StatusBar, TextInput, Text, TouchableOpacity,ImageBackground, View, ScrollView } from 'react-native';
 import { useTheme } from 'styled-components';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth, useOAuth } from '@clerk/clerk-expo';
@@ -76,10 +76,16 @@ export function SignIn() {
   }
 
   return (
-    <Container>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <ImageBackground
+                source={require('../../assets/fundo.png')}
+                style={styles.imagemDeFundo}
+            >
+      <StatusBar barStyle="light-content"
+				backgroundColor="transparent"
+				translucent />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <Header>
+        
           <TitleWrapper>
             <Title>
               Controle suas {'\n'}
@@ -92,9 +98,9 @@ export function SignIn() {
             Faça seu login com {'\n'}
             uma das contas abaixo
           </SignInTitle>
-        </Header>
+        
 
-        <Footer>
+       
           <FooterWrapper>
             <InputContainer>
               {isRegistering ? (
@@ -160,9 +166,10 @@ export function SignIn() {
                 style={{ marginTop: 18 }}
               />}
           </FooterWrapper>
-        </Footer>
+       
       </ScrollView>
-    </Container>
+      </ImageBackground>
+    </View>
   );
 }
 
@@ -177,10 +184,18 @@ const styles = {
     fontSize: 16,
     color: '#333333'
   },
+  container: {
+    flex: 1,
+},
   toggleText: {
     fontWeight: '700',
     padding: 15,
     textAlign: 'center',
     color: '#4F4F4F'
-  }
+  },
+  imagemDeFundo: {
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
+}
 };
