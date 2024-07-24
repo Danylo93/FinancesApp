@@ -1,6 +1,8 @@
 import styled from 'styled-components/native';
 import { Feather } from '@expo/vector-icons';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { Ionicons } from '@expo/vector-icons';
+
 
 interface TransactionProps {
   type: 'positive' | 'negative';
@@ -56,4 +58,17 @@ export const CategoryName = styled.Text`
 export const Date = styled.Text`
   font-size: ${RFValue(14)}px;
   color: ${({ theme }) => theme.colors.text};
+`;
+
+export const DeleteButton = styled.View`
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: ${({ theme }) => theme.colors.background};
+  padding: 10px;
+  border-radius: 50px;
+`;
+
+export const DeleteIcon = styled(Ionicons)`
+  color: ${({ theme }) => theme.colors.danger};
 `;

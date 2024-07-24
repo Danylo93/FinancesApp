@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, StatusBar} from 'react-native';
-import { RFValue } from 'react-native-responsive-fontsize';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, StatusBar, TextInput, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useTheme } from 'styled-components';
-
-// import AppleSvg from '../../assets/apple.svg';
-// import GoogleSvg from '../../assets/google.svg';
-// import LogoSvg from '../../assets/logo.svg';
-
-import { useAuth } from '../../hooks/auth';
-
-import { SignInSocialButton } from '../../components/SignInSocialButton'
-
+import * as WebBrowser from 'expo-web-browser';
+import { useAuth, useOAuth } from '@clerk/clerk-expo';
+import GoogleSvg from '../../assets/google.svg'; // Se estiver usando o SVG
+import { SignInSocialButton } from '../../components/SignInSocialButton';
 import {
   Container,
   Header,
@@ -18,85 +12,175 @@ import {
   Title,
   SignInTitle,
   Footer,
-  FooterWrapper
- } from './styles';
+  FooterWrapper,
+  EmailInput,
+  PasswordInput,
+  SignInButton,
+  OrText,
+  InputContainer
+} from './styles';
+import { login, register } from '../../services/api'; // Atualize o caminho se necessário
+
+WebBrowser.maybeCompleteAuthSession();
 
 export function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
   const theme = useTheme();
+  const googleOAuth = useOAuth({ strategy: 'oauth_google' });
 
-  async function handleSignInWithGoogle() {
+  async function onGoogleSignIn() {
     try {
       setIsLoading(true);
-      return await signInWithGoogle();
+      const oAuthFlow = await googleOAuth.startOAuthFlow();
+
+      if (oAuthFlow.authSessionResult?.type === 'success') {
+        if (oAuthFlow.setActive) {
+          await oAuthFlow.setActive({ session: oAuthFlow.createdSessionId });
+        }
+      } else {
+        setIsLoading(false);
+      }
     } catch (error) {
       console.log(error);
-      Alert.alert('Não foi possível conectar a conta Google');
-      setIsLoading(false)
     }
   }
 
-  // async function handleSignInWithApple() {
-  //   try {
-  //     setIsLoading(true);
-  //     return await signInWithApple();
-  //   } catch (error) {
-  //     console.log(error);
-  //     Alert.alert('Não foi possível conectar a conta Apple');
-  //     setIsLoading(false)
-  //   }
-  // }
+  useEffect(() => {
+    WebBrowser.warmUpAsync();
+    return () => {
+      WebBrowser.coolDownAsync();
+    };
+  }, []);
+
+  async function handleSignInWithEmail() {
+    try {
+      const data = await login(email, password);
+      Alert.alert('Login bem-sucedido', `Bem-vindo ${data.user.name}`);
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  }
+
+  async function handleRegister() {
+    try {
+      const data = await register(name, email, password);
+      Alert.alert('Registro bem-sucedido', `Usuário ${data.name} registrado com sucesso`);
+      setIsRegistering(false);
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  }
 
   return (
     <Container>
       <StatusBar barStyle="light-content" />
-      <Header>
-        <TitleWrapper>
-          {/* <LogoSvg
-            width={RFValue(120)}
-            height={RFValue(68)}
-          /> */}
-          
-          <Title>
-            Controle suas {'\n'}
-            finanças de forma {'\n'}
-            muito simples
-          </Title>
-        </TitleWrapper>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <Header>
+          <TitleWrapper>
+            <Title>
+              Controle suas {'\n'}
+              finanças de forma {'\n'}
+              muito simples
+            </Title>
+          </TitleWrapper>
 
-        <SignInTitle>
-          Faça seu login com {'\n'}
-          uma das contas abaixo
-        </SignInTitle>
-      </Header>
+          <SignInTitle>
+            Faça seu login com {'\n'}
+            uma das contas abaixo
+          </SignInTitle>
+        </Header>
 
-      <Footer>
-        <FooterWrapper>
-          <SignInSocialButton
-            title="Entrar com Google"
-            // svg={GoogleSvg}
-            onPress={handleSignInWithGoogle}
-          />
-        
-          {/* { Platform.OS === 'ios' &&
-          
-            <SignInSocialButton
-              title="Entrar com Apple"
-              // svg={AppleSvg}
-              onPress={handleSignInWithApple}
-            />
-            } */}
+        <Footer>
+          <FooterWrapper>
+            <InputContainer>
+              {isRegistering ? (
+                <>
+                  <TextInput
+                    placeholder="Nome"
+                    value={name}
+                    onChangeText={setName}
+                    style={{ ...styles.input, marginBottom: 10 }}
+                  />
+                  <EmailInput
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <PasswordInput
+                    placeholder="Senha"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                  <SignInButton title="Registrar" onPress={handleRegister} />
+                  <TouchableOpacity onPress={() => setIsRegistering(false)}>
+                    <Text style={styles.toggleText}>Já tem uma conta? Faça login</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <EmailInput
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <PasswordInput
+                    placeholder="Senha"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                  <SignInButton title="Entrar" onPress={handleSignInWithEmail} />
+                  <TouchableOpacity onPress={() => setIsRegistering(true)}>
+                    <Text style={styles.toggleText}>Ainda não tem conta? Cadastre-se</Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
+              <OrText>OU</OrText>
 
-        </FooterWrapper>
+              <SignInSocialButton
+                      title="Entrar com Google"
+                       iconName="google"
+                       onPress={onGoogleSignIn}
+                />
+            </InputContainer>
 
-        { isLoading && 
-        <ActivityIndicator
-         color={theme.colors.shape}
-         style={{marginTop: 18}}
-         />}
-      </Footer>
+            {isLoading &&
+              <ActivityIndicator
+                color={theme.colors.shape}
+                style={{ marginTop: 18 }}
+              />}
+          </FooterWrapper>
+        </Footer>
+      </ScrollView>
     </Container>
   );
 }
+
+const styles = {
+  input: {
+    height: 50,
+    borderColor: '#E0E0E0',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#FFFFFF',
+    fontSize: 16,
+    color: '#333333'
+  },
+  toggleText: {
+    fontWeight: '700',
+    padding: 15,
+    textAlign: 'center',
+    color: '#4F4F4F'
+  }
+};

@@ -1,18 +1,24 @@
 import styled from 'styled-components/native';
-import { RFPercentage, RFValue } from 'react-native-responsive-fontsize';
+import { TextInput, Button, Text, TouchableOpacity, View } from 'react-native';
 
 export const Container = styled.View`
   flex: 1;
+  background-color: ${({ theme }) => theme.colors.background};
 `;
 
 export const Header = styled.View`
-  width: 100%;
-  height: 70%;
-
+  flex: 2; 
   background-color: ${({ theme }) => theme.colors.primary};
-
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
+`;
+
+export const OrText = styled(Text)`
+  font-family: ${({ theme }) => theme.fonts.regular};
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.text};
+  text-align: center;
+  margin: 20px;
 `;
 
 export const TitleWrapper = styled.View`
@@ -20,36 +26,76 @@ export const TitleWrapper = styled.View`
 `;
 
 export const Title = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.medium};
+  font-family: ${({ theme }) => theme.fonts.bold};
+  font-size: 30px;
   color: ${({ theme }) => theme.colors.shape};
-  font-size: ${RFValue(30)}px;
-
   text-align: center;
-
-  margin-top: 45px;
 `;
 
 export const SignInTitle = styled.Text`
   font-family: ${({ theme }) => theme.fonts.regular};
+  font-size: 16px;
   color: ${({ theme }) => theme.colors.shape};
-  font-size: ${RFValue(16)}px;
-
   text-align: center;
-
-  margin-top: 80px;
-  margin-bottom: 67px;
+  margin-top: 20px;
 `;
 
 export const Footer = styled.View`
-  width: 100%;
-  height: 30%;
-
-  background-color: ${({ theme }) => theme.colors.secondary};
+  flex: 1;
+  background-color: ${({ theme }) => theme.colors.primary};
+  justify-content: center;
+  align-items: center;
 `;
 
 export const FooterWrapper = styled.View`
-  margin-top: ${RFPercentage(-4)}px;
-  padding: 0 32px;
-
+  width: 100%;
+  padding: 0 28px;
   justify-content: space-between;
+`;
+
+export const InputContainer = styled.View`
+  background-color: ${({ theme }) => theme.colors.shape};
+  padding: 20px;
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 20px;
+`;
+
+export const EmailInput = styled(TextInput)`
+  height: 40px;
+  border-color: gray;
+  border-width: 1px;
+  margin-bottom: 10px;
+  padding-horizontal: 10px;
+  border-radius: 8px;
+`;
+
+export const PasswordInput = styled(TextInput)`
+  height: 40px;
+  border-color: gray;
+  border-width: 1px;
+  margin-bottom: 10px;
+  padding-horizontal: 10px;
+  border-radius: 8px;
+`;
+
+export const SignInButton = styled(Button)`
+  margin-bottom: 20px;
+`;
+
+export const GoogleButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: #4285F4; 
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%; 
+`;
+
+export const GoogleButtonText = styled.Text`
+  margin-left: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-family: ${({ theme }) => theme.fonts.regular};
 `;

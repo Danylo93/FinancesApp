@@ -3,15 +3,18 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert
+  Alert,
+  View,
+  Text
 } from 'react-native';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { InputForm } from '../../components/Form/InputForm';
 import { Button } from '../../components/Form/Button';
@@ -26,32 +29,35 @@ import {
   Title,
   Form,
   Fields,
-  TransactionsTypes
+  TransactionsTypes,
+  DateButton,
 } from './styles';
-import { useAuth } from '../../hooks/auth';
+import { useUser } from '@clerk/clerk-expo';
 
 interface FormData {
   name: string;
-  amount: string;  
+  amount: string;
+  date: Date;
 }
 
 const schema = Yup.object().shape({
   name: Yup
-  .string()
-  .required('Nome é obrigatório'),
+    .string()
+    .required('Nome é obrigatório'),
   amount: Yup
-  .number()
-  .typeError('Informe um valor númerico')
-  .positive('O valor não pode ser negativo')
-  .required('O valor é obrigatório'),
+    .number()
+    .typeError('Informe um valor númerico')
+    .positive('O valor não pode ser negativo')
+    .required('O valor é obrigatório'),
 });
 
-export function Register(){
+export function Register() {
   const [transactionType, setTransactionType] = useState('');
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const { user } = useAuth();
-  
+  const { user } = useUser();
   const [category, setCategory] = useState({
     key: 'category',
     name: 'Categoria'
@@ -65,28 +71,46 @@ export function Register(){
     reset,
     formState: { errors }
   } = useForm({
-    resolver: yupResolver(schema)
+    resolver: yupResolver(schema),
+    defaultValues: {
+      date: selectedDate,
+    }
   });
 
-  function handleTransactionsTypeSelect(type: 'positive' | 'negative'){
+  function handleTransactionsTypeSelect(type: 'positive' | 'negative') {
     setTransactionType(type);
   }
 
-  function handleOpenSelectCategoryModal(){
+  function handleOpenSelectCategoryModal() {
     setCategoryModalOpen(true);
   }
 
-  function handleCloseSelectCategoryModal(){
+  function handleCloseSelectCategoryModal() {
     setCategoryModalOpen(false);
   }
 
-  async function handleRegister(form: FormData){
-    if(!transactionType)
+  function handleOpenDatePicker() {
+    setDatePickerVisible(true);
+  }
+
+  function handleDateChange(event: any, date?: Date) {
+    setDatePickerVisible(false);
+    if (date) {
+      const currentDate = new Date();
+      if (date > currentDate) {
+        Alert.alert('Data inválida', 'Não é permitido selecionar uma data futura.');
+        return;
+      }
+      setSelectedDate(date);
+    }
+  }
+
+  async function handleRegister(form: FormData) {
+    if (!transactionType)
       return Alert.alert('Selecione o tipo da transação');
 
-    if(category.key === 'category')
+    if (category.key === 'category')
       return Alert.alert('Selecione a categoria');
-
 
     const newTransaction = {
       id: String(uuid.v4()),
@@ -94,11 +118,11 @@ export function Register(){
       amount: form.amount,
       type: transactionType,
       category: category.key,
-      date: new Date()
+      date: selectedDate.toISOString()
     }
 
     try {
-      const dataKey = `@gofinances:transactions_user:${user.id}`;
+      const dataKey = `@gofinances:transactions_user:${user?.id}`;
 
       const data = await AsyncStorage.getItem(dataKey);
       const currentData = data ? JSON.parse(data) : [];
@@ -116,9 +140,10 @@ export function Register(){
         key: 'category',
         name: 'Categoria'
       });
+      setSelectedDate(new Date());
 
-      navigation.navigate('Listagem');
-      
+      navigation.navigate('Dashboard');
+
     } catch (error) {
       console.log(error);
       Alert.alert("Não foi possível salvar");
@@ -128,7 +153,6 @@ export function Register(){
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <Container>
-
         <Header>
           <Title>Cadastro</Title>
         </Header>
@@ -152,16 +176,31 @@ export function Register(){
               error={errors.amount && errors.amount.message}
             />
 
+            <Text>Selecione a Data da Transação</Text>
+            <DateButton onPress={handleOpenDatePicker}>
+              <Text>{selectedDate.toLocaleDateString('pt-BR')}</Text>
+            </DateButton>
+
+            {datePickerVisible && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+                maximumDate={new Date()} // Impede a seleção de datas futuras
+              />
+            )}
+
             <TransactionsTypes>
               <TransactionTypeButton
                 type="up"
-                title="Income"
+                title="Receita"
                 onPress={() => handleTransactionsTypeSelect('positive')}
                 isActive={transactionType === 'positive'}
               />
               <TransactionTypeButton
                 type="down"
-                title="Outcome"
+                title="Despesa"
                 onPress={() => handleTransactionsTypeSelect('negative')}
                 isActive={transactionType === 'negative'}
               />
@@ -181,12 +220,12 @@ export function Register(){
 
         <Modal visible={categoryModalOpen}>
           <CategorySelect
-              category={category}
-              setCategory={setCategory}
-              closeSelectCategory={handleCloseSelectCategoryModal}
+            category={category}
+            setCategory={setCategory}
+            closeSelectCategory={handleCloseSelectCategoryModal}
           />
         </Modal>
       </Container>
-    </TouchableWithoutFeedback>      
+    </TouchableWithoutFeedback>
   );
 }

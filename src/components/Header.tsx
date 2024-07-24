@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { useAuth } from '../hooks/auth';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../global/styles/theme';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function Header() {
   const { user, signOut } = useAuth();

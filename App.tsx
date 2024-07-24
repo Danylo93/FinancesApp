@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { StatusBar, View, Text } from 'react-native'; 
+import { StatusBar, View, Text, ActivityIndicator } from 'react-native'; 
 import AppLoading from 'expo-app-loading';
 import { ThemeProvider } from 'styled-components';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -19,7 +19,10 @@ export default function App() {
   const { userStorageLoading } = useAuth();
 
   if (!fontsLoaded || userStorageLoading) {
-    return <><Text>Carregando...</Text></>;
+    return <><ActivityIndicator
+    color={theme.colors.shape}
+    style={{ marginTop: 18 }}
+  /></>;
   }
 
   return (

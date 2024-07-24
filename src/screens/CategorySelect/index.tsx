@@ -1,10 +1,7 @@
 import React from 'react';
 import { FlatList } from 'react-native-gesture-handler';
-
 import { Button } from '../../components/Form/Button';
-
 import { categories } from '../../utils/categories';
-
 import {
   Container,
   Header,
@@ -14,7 +11,9 @@ import {
   Name,
   Separator,
   Footer,
+  CloseButton,  // Adicionando importação do CloseButton
 } from './styles';
+import { Feather } from '@expo/vector-icons';
 
 interface Category {
   key: string;
@@ -31,21 +30,24 @@ export function CategorySelect({
   category,
   setCategory,
   closeSelectCategory
-} : Props ){
+}: Props) {
 
-  function handleCategorySelect(category: Category){
+  function handleCategorySelect(category: Category) {
     setCategory(category);
   }
 
   return (
     <Container>
       <Header>
+        <CloseButton onPress={closeSelectCategory}>
+        <Feather name="x" size={24} color="white" />
+        </CloseButton>
         <Title>Categoria</Title>
       </Header>
 
       <FlatList
         data={categories}
-        style={{ flex: 1, width: '100%'}}
+        style={{ flex: 1, width: '100%' }}
         keyExtractor={(item) => item.key}
         renderItem={({ item }) => (
           <Category
@@ -66,5 +68,5 @@ export function CategorySelect({
         />
       </Footer>
     </Container>
-  )
+  );
 }

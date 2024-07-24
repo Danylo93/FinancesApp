@@ -1,6 +1,10 @@
 import React from 'react';
 import { RectButtonProps } from 'react-native-gesture-handler';
 import { SvgProps } from 'react-native-svg';
+import { Feather } from '@expo/vector-icons';
+import { TouchableOpacityProps } from 'react-native';
+
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import {
   Button,
@@ -8,26 +12,24 @@ import {
   Text,
 } from './styles';
 
-interface Props extends RectButtonProps {
+interface Props extends TouchableOpacityProps {
   title: string;
-  svg?: React.FC<SvgProps>
+  svg?: React.FC<SvgProps>;
+  iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 }
 
 export function SignInSocialButton({
   title,
+  iconName,
   svg: Svg,
   ...rest
-}: Props){
-  return(
+}: Props) {
+  return (
     <Button {...rest}>
-      {/* <ImageContainer>
-        <Svg />
-      </ImageContainer> */}
-
-      <Text>
-        {title}
-      </Text>
+      <ImageContainer>
+        <MaterialCommunityIcons name={iconName} size={24} color="black" />
+      </ImageContainer>
+      <Text>{title}</Text>
     </Button>
-
   );
 }

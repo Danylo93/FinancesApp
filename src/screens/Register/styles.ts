@@ -40,3 +40,12 @@ export const TransactionsTypes = styled.View`
   margin-top: 8px;
   margin-bottom: 16px;
 `;
+
+export const DateButton = styled.TouchableOpacity`
+  background-color: ${({ theme }) => theme.colors.background};
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+  align-items: center;
+  justify-content: center;
+`;

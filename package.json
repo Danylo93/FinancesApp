@@ -9,9 +9,11 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^1.2.8",
     "@expo-google-fonts/poppins": "^0.2.3",
     "@hookform/resolvers": "^3.9.0",
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/datetimepicker": "^8.2.0",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
@@ -20,6 +22,7 @@
     "expo": "^51.0.22",
     "expo-app-loading": "^2.1.1",
     "expo-auth-session": "~5.5.2",
+    "expo-secure-store": "^13.0.2",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-hook-form": "^7.52.1",

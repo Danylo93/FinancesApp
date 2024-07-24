@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, Dimensions } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Dimensions, View, Text , StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PieChart } from 'react-native-chart-kit';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { addMonths, subMonths, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native'; 
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'styled-components';
 import { HistoryCard } from '../../components/HistoryCard';
+import MonthSelect from '../../components/MonthSelect';  
+import YearSelect from '../../components/YearSelect';    
 
 import {
   Container,
@@ -16,15 +17,11 @@ import {
   Title,
   Content,
   ChartContainer,
-  MonthSelect,
-  MonthSelectButton,
-  MonthSelectIcon,
-  Month,
   LoadContainer
 } from './styles';
 
 import { categories } from '../../utils/categories';
-import { useAuth } from '../../hooks/auth';
+import { useUser } from '@clerk/clerk-expo';
 
 interface TransactionData {
   type: 'positive' | 'negative';
@@ -45,61 +42,55 @@ interface CategoryData {
 
 const screenWidth = Dimensions.get('window').width;
 
-export function Resume(){
+export function Resume() {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [totalByCategories, setTotalByCategories] = useState<CategoryData[]>([]);
-
+  
   const theme = useTheme();
-  const { user } = useAuth();
-
-  function handleDateChange(action: 'next' | 'prev'){
-    if(action === 'next'){
-      setSelectedDate(addMonths(selectedDate, 1));
-    }else{
-      setSelectedDate(subMonths(selectedDate, 1));
-    }
-  }
+  const { user } = useUser();
 
   async function loadData() {
     setIsLoading(true);
-    const dataKey = `@gofinances:transactions_user:${user.id}`;
+    const dataKey = `@gofinances:transactions_user:${user?.id}`;
     const response = await AsyncStorage.getItem(dataKey);
     const responseFormatted = response ? JSON.parse(response) : [];
 
-    const expensives = responseFormatted
-    .filter((expensive: TransactionData) =>
-      expensive.type === 'negative' &&
-      new Date(expensive.date).getMonth() === selectedDate.getMonth() &&
-      new Date(expensive.date).getFullYear() === selectedDate.getFullYear()
-    );
+    const startOfSelectedMonth = startOfMonth(new Date(selectedYear, selectedMonth, 1));
+    const endOfSelectedMonth = endOfMonth(new Date(selectedYear, selectedMonth, 1));
 
+    const expensives = responseFormatted
+      .filter((expensive: TransactionData) =>
+        expensive.type === 'negative' &&
+        new Date(expensive.date) >= startOfSelectedMonth &&
+        new Date(expensive.date) <= endOfSelectedMonth
+      );
 
     const expensivesTotal = expensives
-    .reduce((acumullator: number, expensive: TransactionData) => {
-      return acumullator + Number(expensive.amount);
-    }, 0);
-    
+      .reduce((acumullator: number, expensive: TransactionData) => {
+        return acumullator + Number(expensive.amount);
+      }, 0);
+
     const totalByCategory: CategoryData[] = [];
 
     categories.forEach(category => {
       let categorySum = 0;
 
       expensives.forEach((expensive: TransactionData) => {
-        if(expensive.category === category.key){
+        if (expensive.category === category.key) {
           categorySum += Number(expensive.amount);
         }
       });
 
-      if(categorySum > 0){
+      if (categorySum > 0) {
         const totalFormatted = categorySum
-        .toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        })
+          .toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
 
         const percent = `${(categorySum / expensivesTotal * 100).toFixed(0)}%`;
-
 
         totalByCategory.push({
           key: category.key,
@@ -116,13 +107,11 @@ export function Resume(){
     setIsLoading(false);
   }
 
-
   useFocusEffect(useCallback(() => {
     loadData();
-  },[selectedDate]));
+  }, [selectedMonth, selectedYear]));
 
-
-  return(
+  return (
     <Container>
       <Header>
         <Title>Resumo por categoria</Title>
@@ -142,62 +131,84 @@ export function Resume(){
               paddingBottom: useBottomTabBarHeight(),
             }}
           >
-
-            <MonthSelect>
-              <MonthSelectButton onPress={() => handleDateChange('prev')}>
-                <MonthSelectIcon name="chevron-left"/>
-              </MonthSelectButton>
-
-              <Month>
-                { format(selectedDate, 'MMMM, yyyy', {locale: ptBR}) }
-              </Month>
-
-              <MonthSelectButton onPress={() => handleDateChange('next')}>
-                <MonthSelectIcon name="chevron-right"/>
-              </MonthSelectButton>
-            </MonthSelect>
-
-
-            <ChartContainer>
-              <PieChart
-                data={totalByCategories.map(category => ({
-                  name: category.name,
-                  population: category.total,
-                  color: category.color,
-                  legendFontColor: theme.colors.text,
-                  legendFontSize: RFValue(15),
-                }))}
-                width={screenWidth - 48}
-                height={220}
-                chartConfig={{
-                  backgroundColor: theme.colors.background,
-                  backgroundGradientFrom: theme.colors.background,
-                  backgroundGradientTo: theme.colors.background,
-                  color: (opacity = 1) => theme.colors.primary,
-                  labelColor: (opacity = 1) => theme.colors.text,
-                  style: {
-                    borderRadius: 16,
-                  },
-                }}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="15"
-                absolute
+            <View style={{ marginVertical: 20 }}>
+              <Text>Selecione o ano:</Text>
+              <YearSelect
+                selectedYear={selectedYear}
+                onYearChange={setSelectedYear}
               />
-            </ChartContainer>
+            </View>
+            <View style={{ marginVertical: 20 }}>
+              <Text>Selecione o mês:</Text>
+              <MonthSelect
+                selectedMonth={selectedMonth}
+                onMonthChange={setSelectedMonth}
+              />
+            </View>
 
             {
-              totalByCategories.map(item => (
-                <HistoryCard
-                  key={item.key}
-                  title={item.name}
-                  amount={item.totalFormatted}
-                  color={item.color}
-                />
-              ))
+              totalByCategories.length > 0 ? (
+                <>
+                  <ChartContainer>
+                    <PieChart
+                      data={totalByCategories.map(category => ({
+                        name: category.name,
+                        population: category.total,
+                        color: category.color,
+                        legendFontColor: theme.colors.text,
+                        legendFontSize: RFValue(15),
+                      }))}
+                      width={screenWidth - 48}
+                      height={220}
+                      chartConfig={{
+                        backgroundColor: theme.colors.background,
+                        backgroundGradientFrom: theme.colors.background,
+                        backgroundGradientTo: theme.colors.background,
+                        color: (opacity = 1) => theme.colors.primary,
+                        labelColor: (opacity = 1) => theme.colors.text,
+                        style: {
+                          borderRadius: 16,
+                        },
+                      }}
+                      accessor="population"
+                      backgroundColor="transparent"
+                      paddingLeft="15"
+                      absolute
+                    />
+                  </ChartContainer>
+
+                  {
+                    totalByCategories.map(item => (
+                      <HistoryCard
+                        key={item.key}
+                        title={item.name}
+                        amount={item.totalFormatted}
+                        color={item.color}
+                      />
+                    ))
+                  }
+                </>
+              ) : (
+                <View style={styles.noDataContainer}>
+                  <Text style={styles.noDataText}>Você não fez nenhuma transação nesse mês.</Text>
+                </View>
+              )
             }
           </Content>
       }
     </Container>
-  )
+  );
 }
+
+const styles = StyleSheet.create({
+  noDataContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    padding: 20,
+  },
+  noDataText: {
+    fontSize: RFValue(14),
+    color: '#999',
+  },
+});
