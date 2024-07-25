@@ -78,7 +78,7 @@ export function SignIn() {
   return (
     <View style={styles.container}>
       <ImageBackground
-                source={require('../../assets/fundo.png')}
+                source={require('../../assets/fundo.jpg')}
                 style={styles.imagemDeFundo}
             >
       <StatusBar barStyle="light-content"
@@ -103,7 +103,7 @@ export function SignIn() {
        
           <FooterWrapper>
             <InputContainer>
-              {isRegistering ? (
+              {/* {isRegistering ? (
                 <>
                   <TextInput
                     placeholder="Nome"
@@ -149,9 +149,9 @@ export function SignIn() {
                     <Text style={styles.toggleText}>Ainda não tem conta? Cadastre-se</Text>
                   </TouchableOpacity>
                 </>
-              )}
+              )} */}
 
-              <OrText>OU</OrText>
+              {/* <OrText>OU</OrText> */}
 
               <SignInSocialButton
                       title="Entrar com Google"
