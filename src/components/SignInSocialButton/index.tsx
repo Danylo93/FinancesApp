@@ -1,5 +1,4 @@
 import React from 'react';
-import { RectButtonProps } from 'react-native-gesture-handler';
 import { SvgProps } from 'react-native-svg';
 import { Feather } from '@expo/vector-icons';
 import { TouchableOpacityProps } from 'react-native';

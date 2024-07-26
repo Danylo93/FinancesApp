@@ -1,122 +1,98 @@
-import React, { createContext, ReactNode, useContext, useState, useEffect } from 'react';
-import { useAuthRequest, makeRedirectUri } from 'expo-auth-session';
+import React, { createContext, useState, useEffect } from 'react';
+import { login, register } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface AuthProviderProps {
-  children: ReactNode;
+interface AuthContextType {
+  user: any;
+  loading: boolean;
+  loginUser: (email: string, password: string) => Promise<boolean>;
+  createUser: (userData: UserData) => Promise<void>;
+  logoutUser: () => Promise<void>;
 }
 
-interface User {
-  id: string;
-  name: string;
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  loginUser: async () => false,
+  createUser: async () => {},
+  logoutUser: async () => {},
+});
+
+interface UserData {
   email: string;
-  photo?: string;
+  password?: string;
+  name: string;
 }
 
-interface IAuthContextData {
-  user: User;
-  signInWithGoogle(): Promise<void>;
-  signOut(): Promise<void>;
-  userStorageLoading: boolean;
-}
-
-const AuthContext = createContext({} as IAuthContextData);
-
-const CLIENT_ID = '716466557712-65069dutb0p7tmemqt35sdsepl3rsjp2.apps.googleusercontent.com'; // Substitua pelo seu CLIENT_ID
-const REDIRECT_URI = makeRedirectUri({ useProxy: true }); // Certifique-se de usar um proxy se estiver usando o Expo
-const RESPONSE_TYPE = 'token';
-const SCOPE = 'profile email';
-
-const discovery = {
-  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
-  tokenEndpoint: 'https://oauth2.googleapis.com/token',
-  revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-};
-
-function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User>({} as User);
-  const [userStorageLoading, setUserStorageLoading] = useState(true);
-
-  const userStorageKey = '@gofinances:user';
-
-  // Atualize a configuração para o uso correto de useAuthRequest
-  const [request, response, promptAsync] = useAuthRequest(
-    {
-      clientId: CLIENT_ID,
-      scopes: [SCOPE],
-      redirectUri: REDIRECT_URI,
-      responseType: RESPONSE_TYPE,
-    },
-    discovery
-  );
-  console.log('Redirect URI:', REDIRECT_URI);
+export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    async function loadUserStorageDate() {
+    const loadStoredUser = async () => {
       try {
-        const userStoraged = await AsyncStorage.getItem(userStorageKey);
-
-        if (userStoraged) {
-          const userLogged = JSON.parse(userStoraged) as User;
-          setUser(userLogged);
+        const storedUser = await AsyncStorage.getItem('user');
+        const storedToken = await AsyncStorage.getItem('token');
+        if (storedUser && storedToken) {
+          setUser(JSON.parse(storedUser));
         }
       } catch (error) {
-        console.error('Error loading user from storage:', error);
+        console.error('Failed to load user from storage', error);
       } finally {
-        setUserStorageLoading(false);
+        setLoading(false);
       }
-    }
+    };
 
-    loadUserStorageDate();
+    loadStoredUser();
   }, []);
 
-  async function signInWithGoogle() {
-    if (!request || !promptAsync) {
-      console.error('Auth request or promptAsync is not available');
-      return;
-    }
-
+  const loginUser = async (email: string, password: string): Promise<boolean> => {
     try {
-      const result = await promptAsync();
-
-      if (result.type === 'success') {
-        const { access_token } = result.params;
-        const response = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${access_token}`);
-        const userInfo = await response.json();
-
-        const userLogged = {
-          id: userInfo.id,
-          email: userInfo.email,
-          name: userInfo.given_name,
-          photo: userInfo.picture,
-        };
-
-        setUser(userLogged);
-        await AsyncStorage.setItem(userStorageKey, JSON.stringify(userLogged));
+      const response = await login(email, password);
+      if (response && response.user) {
+        setUser(response.user);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        await AsyncStorage.setItem('token', response.token); // Armazena o token também
+        return true;
+      } else {
+        throw new Error('Dados de resposta inválidos');
       }
     } catch (error) {
-      console.error('Error during sign-in with Google:', error);
+      console.error('Login failed', error);
+      return false;
     }
-  }
+  };
 
-  async function signOut() {
-    setUser({} as User);
-    await AsyncStorage.removeItem(userStorageKey);
-  }
+  const createUser = async (userData: UserData) => {
+    try {
+      const response = await register(userData.name, userData.email, userData.password || '');
+      if (response && response.user) {
+        setUser(response.user);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        await AsyncStorage.setItem('token', response.token); // Armazena o token também
+      } else {
+        throw new Error('Dados de resposta inválidos');
+      }
+    } catch (error) {
+      throw new Error('User creation failed');
+    }
+  };
+
+  const logoutUser = async () => {
+    try {
+      setUser(null);
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('token'); // Remove o token também
+    } catch (error) {
+      throw new Error('Logout failed');
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, userStorageLoading }}>
+    <AuthContext.Provider value={{ user, loading, loginUser, createUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export { AuthProvider, useAuth };
+export default AuthContext;

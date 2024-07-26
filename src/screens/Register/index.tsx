@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   Modal,
   TouchableWithoutFeedback,
@@ -32,7 +32,7 @@ import {
   TransactionsTypes,
   DateButton,
 } from './styles';
-import { useUser } from '@clerk/clerk-expo';
+import AuthContext from '../../hooks/auth';
 
 interface FormData {
   name: string;
@@ -57,7 +57,7 @@ export function Register() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const { user } = useUser();
+  const { user } = useContext(AuthContext);
   const [category, setCategory] = useState({
     key: 'category',
     name: 'Categoria'

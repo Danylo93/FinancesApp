@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.100.7:3000/api/auth'; // Atualize para a URL correta do seu servidor
+const API_URL = 'https://api-finances-node.vercel.app/api/auth'; // Atualize para a URL correta do seu servidor
 
 export const register = async (name: string, email: string, password: string) => {
   try {

@@ -4,25 +4,22 @@ import { TextInput, Button, Text, TouchableOpacity, View } from 'react-native';
 export const Container = styled.View`
   flex: 1;
   background-color: ${({ theme }) => theme.colors.background};
+  justify-content: center; 
+  align-items: center; 
+  padding: 0 20px; 
 `;
 
 export const Header = styled.View`
-  flex: 2; 
   background-color: ${({ theme }) => theme.colors.primary};
   justify-content: center;
   align-items: center;
-`;
-
-export const OrText = styled(Text)`
-  font-family: ${({ theme }) => theme.fonts.regular};
-  font-size: 16px;
-  color: ${({ theme }) => theme.colors.text};
-  text-align: center;
-  margin: 20px;
+  width: 100%; 
+  padding: 20px; 
 `;
 
 export const TitleWrapper = styled.View`
   align-items: center;
+  margin-bottom: 20px; 
 `;
 
 export const Title = styled.Text`
@@ -40,25 +37,12 @@ export const SignInTitle = styled.Text`
   margin-top: 20px;
 `;
 
-export const Footer = styled.View`
-  flex: 1;
-  background-color: ${({ theme }) => theme.colors.primary};
-  justify-content: center;
-  align-items: center;
-`;
-
-export const FooterWrapper = styled.View`
-  width: 100%;
-  padding: 0 28px;
-  justify-content: space-between;
-`;
-
 export const InputContainer = styled.View`
   background-color: ${({ theme }) => theme.colors.shape};
   padding: 20px;
   border-radius: 8px;
-  width: 100%;
-  margin-bottom: 20px;
+  width: 100%; 
+  max-width: 400px; 
 `;
 
 export const EmailInput = styled(TextInput)`
@@ -98,4 +82,11 @@ export const GoogleButtonText = styled.Text`
   color: #fff;
   font-size: 16px;
   font-family: ${({ theme }) => theme.fonts.regular};
+`;
+
+export const FooterWrapper = styled.View`
+  width: 100%;
+  padding: 0 28px;
+  justify-content: center;
+  align-items: center;
 `;

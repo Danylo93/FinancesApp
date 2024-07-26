@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from 'styled-components';
@@ -18,11 +18,10 @@ import {
   HighlightCards,
   Transactions,
   Title,
-  TransactionList,
-  LogoutButton,
   LoadContainer,
+  LogoutButton,
 } from './styles';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import AuthContext from '../../hooks/auth';
 
 export interface DataListProps extends TransactionCardProps {
   id: string;
@@ -43,10 +42,10 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<DataListProps[]>([]);
   const [highlightData, setHighlightData] = useState<HighlightData>({} as HighlightData);
+  const [refreshing, setRefreshing] = useState(false);
 
   const theme = useTheme();
-  const { signOut } = useAuth();
-  const { user } = useUser();
+  const { logoutUser, user } = useContext(AuthContext);
 
   function getLastTransactionDate(
     collection: DataListProps[],
@@ -147,6 +146,7 @@ export function Dashboard() {
       console.error('Error loading transactions:', error);
     } finally {
       setIsLoading(false);
+      setRefreshing(false); // Stop refreshing
     }
   }
 
@@ -187,11 +187,17 @@ export function Dashboard() {
         },
         {
           text: "Sair",
-          onPress: () => signOut()
+          onPress: () => logoutUser()
         }
       ]
     );
   }
+
+  // Refresh control handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadTransactions();
+  };
 
   return (
     <Container>
@@ -208,11 +214,11 @@ export function Dashboard() {
               <UserWrapper>
                 <UserInfo>
                   <Photo
-                    source={{ uri: user?.imageUrl }}
+                    source={{ uri: user?.imageUrl || 'https://picsum.photos/120' }}
                   />
                   <User>
                     <UserGreeting>Olá,</UserGreeting>
-                    <UserName>{user?.fullName}</UserName>
+                    <UserName>{user?.name}</UserName>
                   </User>
                 </UserInfo>
 
@@ -246,7 +252,7 @@ export function Dashboard() {
             <Transactions>
               <Title>Histórico de Transações</Title>
 
-              <TransactionList
+              <FlatList
                 data={transactions}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
@@ -268,10 +274,15 @@ export function Dashboard() {
                         ]
                       );
                     }}
-                    
                   />
                 )}
-                
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[theme.colors.primary]} // Customize the refresh control color
+                  />
+                }
               />
             </Transactions>
           </>

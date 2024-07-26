@@ -1,91 +1,86 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StatusBar, TextInput, Text, TouchableOpacity,ImageBackground, View, ScrollView } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  StatusBar,
+  TextInput,
+  Text,
+  TouchableOpacity,
+  ImageBackground,
+  View,
+  ScrollView
+} from 'react-native';
 import { useTheme } from 'styled-components';
 import * as WebBrowser from 'expo-web-browser';
-import { useAuth, useOAuth } from '@clerk/clerk-expo';
-import GoogleSvg from '../../assets/google.svg'; // Se estiver usando o SVG
-import { SignInSocialButton } from '../../components/SignInSocialButton';
+import AuthContext from '../../hooks/auth';
 import {
   Container,
   Header,
   TitleWrapper,
   Title,
   SignInTitle,
-  Footer,
   FooterWrapper,
   EmailInput,
   PasswordInput,
   SignInButton,
-  OrText,
   InputContainer
 } from './styles';
-import { login, register } from '../../services/api'; // Atualize o caminho se necessário
 
 WebBrowser.maybeCompleteAuthSession();
 
-export function SignIn() {
+export function SignIn({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const theme = useTheme();
-  const googleOAuth = useOAuth({ strategy: 'oauth_google' });
+  const { loginUser, createUser, user, loading } = useContext(AuthContext);
 
-  async function onGoogleSignIn() {
-    try {
-      setIsLoading(true);
-      const oAuthFlow = await googleOAuth.startOAuthFlow();
-
-      if (oAuthFlow.authSessionResult?.type === 'success') {
-        if (oAuthFlow.setActive) {
-          await oAuthFlow.setActive({ session: oAuthFlow.createdSessionId });
-        }
-      } else {
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
+  // Redireciona se o usuário já estiver autenticado
   useEffect(() => {
-    WebBrowser.warmUpAsync();
-    return () => {
-      WebBrowser.coolDownAsync();
-    };
-  }, []);
+    if (!loading && user) {
+      navigation.replace('Dashboard', { userName: user.name });
+    }
+  }, [user, loading, navigation]);
 
   async function handleSignInWithEmail() {
+    setIsLoading(true);
     try {
-      const data = await login(email, password);
-      Alert.alert('Login bem-sucedido', `Bem-vindo ${data.user.name}`);
+      const success = await loginUser(email, password);
+      if (success) {
+        navigation.replace('Dashboard', { userName: name });
+      } else {
+        Alert.alert('Erro de login', 'Credenciais inválidas.');
+      }
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      Alert.alert('Erro de login', error.message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  async function handleRegister() {
+  async function handleSignUp() {
+    setIsLoading(true);
     try {
-      const data = await register(name, email, password);
-      Alert.alert('Registro bem-sucedido', `Usuário ${data.name} registrado com sucesso`);
+      const user = await createUser({ email, password, name });
+      Alert.alert('Registro bem-sucedido', `Usuário ${user.name} registrado com sucesso`);
       setIsRegistering(false);
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      Alert.alert('Erro ao registrar', error.message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
     <View style={styles.container}>
       <ImageBackground
-                source={require('../../assets/fundo.jpg')}
-                style={styles.imagemDeFundo}
-            >
-      <StatusBar barStyle="light-content"
-				backgroundColor="transparent"
-				translucent />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        
+        source={require('../../assets/fundo.jpg')}
+        style={styles.imagemDeFundo}
+      >
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <TitleWrapper>
             <Title>
               Controle suas {'\n'}
@@ -94,16 +89,14 @@ export function SignIn() {
             </Title>
           </TitleWrapper>
 
-          <SignInTitle>
+          {/* <SignInTitle>
             Faça seu login com {'\n'}
             uma das contas abaixo
-          </SignInTitle>
-        
+          </SignInTitle> */}
 
-       
           <FooterWrapper>
             <InputContainer>
-              {/* {isRegistering ? (
+              {isRegistering ? (
                 <>
                   <TextInput
                     placeholder="Nome"
@@ -115,16 +108,18 @@ export function SignIn() {
                     placeholder="Email"
                     value={email}
                     onChangeText={setEmail}
+                    style={{ ...styles.input, marginBottom: 10 }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
                   <PasswordInput
                     placeholder="Senha"
                     value={password}
+                    style={{ ...styles.input, marginBottom: 10 }}
                     onChangeText={setPassword}
                     secureTextEntry
                   />
-                  <SignInButton title="Registrar" onPress={handleRegister} />
+                  <SignInButton title="Cadastrar" onPress={handleSignUp} />
                   <TouchableOpacity onPress={() => setIsRegistering(false)}>
                     <Text style={styles.toggleText}>Já tem uma conta? Faça login</Text>
                   </TouchableOpacity>
@@ -149,25 +144,17 @@ export function SignIn() {
                     <Text style={styles.toggleText}>Ainda não tem conta? Cadastre-se</Text>
                   </TouchableOpacity>
                 </>
-              )} */}
+              )}
 
-              {/* <OrText>OU</OrText> */}
-
-              <SignInSocialButton
-                      title="Entrar com Google"
-                       iconName="google"
-                       onPress={onGoogleSignIn}
+              {isLoading && (
+                <ActivityIndicator
+                  color={theme.colors.shape}
+                  style={{ marginTop: 18 }}
                 />
+              )}
             </InputContainer>
-
-            {isLoading &&
-              <ActivityIndicator
-                color={theme.colors.shape}
-                style={{ marginTop: 18 }}
-              />}
           </FooterWrapper>
-       
-      </ScrollView>
+        </ScrollView>
       </ImageBackground>
     </View>
   );
@@ -186,7 +173,7 @@ const styles = {
   },
   container: {
     flex: 1,
-},
+  },
   toggleText: {
     fontWeight: '700',
     padding: 15,
@@ -197,5 +184,5 @@ const styles = {
     flex: 1,
     resizeMode: 'cover',
     justifyContent: 'center',
-}
+  }
 };

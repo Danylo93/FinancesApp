@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, Dimensions, View, Text , StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PieChart } from 'react-native-chart-kit';
@@ -21,7 +21,7 @@ import {
 } from './styles';
 
 import { categories } from '../../utils/categories';
-import { useUser } from '@clerk/clerk-expo';
+import AuthContext from '../../hooks/auth';
 
 interface TransactionData {
   type: 'positive' | 'negative';
@@ -34,7 +34,7 @@ interface TransactionData {
 interface CategoryData {
   key: string;
   name: string;
-  total: number;
+  total?: number;
   totalFormatted: string;
   color: string;
   percent: string;
@@ -49,7 +49,7 @@ export function Resume() {
   const [totalByCategories, setTotalByCategories] = useState<CategoryData[]>([]);
   
   const theme = useTheme();
-  const { user } = useUser();
+  const { user } = useContext(AuthContext);
 
   async function loadData() {
     setIsLoading(true);

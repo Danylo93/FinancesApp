@@ -1,5 +1,4 @@
 import React from 'react';
-import { FlatList } from 'react-native-gesture-handler';
 import { Button } from '../../components/Form/Button';
 import { categories } from '../../utils/categories';
 import {
@@ -14,6 +13,7 @@ import {
   CloseButton,  // Adicionando importação do CloseButton
 } from './styles';
 import { Feather } from '@expo/vector-icons';
+import { FlatList } from 'react-native';
 
 interface Category {
   key: string;
