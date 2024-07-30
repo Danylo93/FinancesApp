@@ -4,6 +4,8 @@
     "slug": "FinancesApp",
     "scheme": "FinancesApp",
     "version": "1.0.0",
+    "sdkVersion": "49.0.0",
+    "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,7 +22,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.danylo.oliveira.FinancesApp"
+      "package": "com.agenciafwdigital.finances",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"

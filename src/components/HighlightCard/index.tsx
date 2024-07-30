@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { Feather } from '@expo/vector-icons';
 import {
   Container,
   Header,
@@ -15,6 +15,7 @@ interface Props {
   title: string;
   amount: string;
   lastTransaction: string;
+  isNegative?: boolean; // Adiciona uma prop para determinar se o valor é negativo
 }
 
 const icon = {
@@ -23,15 +24,15 @@ const icon = {
   total: 'dollar-sign'
 }
 
-
 export function HighlightCard({
   type,
   title,
   amount,
-  lastTransaction
-} : Props){
+  lastTransaction,
+  isNegative = false // Define valor padrão para isNegative
+}: Props){
   return (
-    <Container type={type}>
+    <Container type={type} isNegative={isNegative}>
       <Header>
         <Title type={type}>
           {title}
@@ -50,7 +51,6 @@ export function HighlightCard({
           {lastTransaction}
         </LastTransaction>
       </Footer>
-
     </Container>
   )
 }

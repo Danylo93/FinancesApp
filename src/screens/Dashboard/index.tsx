@@ -3,6 +3,8 @@ import { ActivityIndicator, Alert, FlatList, RefreshControl } from 'react-native
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from 'styled-components';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { HighlightCard } from '../../components/HighlightCard';
 import { TransactionCard, TransactionCardProps } from '../../components/TransactionCard';
 import {
@@ -51,17 +53,14 @@ export function Dashboard() {
     collection: DataListProps[],
     type: 'positive' | 'negative'
   ) {
-    const collectionFilttered = collection
-      .filter(transaction => transaction.type === type);
+    const collectionFiltered = collection.filter(transaction => transaction.type === type);
 
-    if (collectionFilttered.length === 0)
-      return "0";
+    if (collectionFiltered.length === 0) return "0";
 
-    const lastTransaction = new Date(
-      Math.max.apply(Math, collectionFilttered
-        .map(transaction => new Date(transaction.date).getTime())));
+    const lastTransactionDate = Math.max(...collectionFiltered.map(transaction => new Date(transaction.date).getTime()));
+    const lastTransaction = new Date(lastTransactionDate);
 
-    return `${lastTransaction.getDate()} de ${lastTransaction.toLocaleString('pt-BR', { month: 'long' })}`;
+    return format(lastTransaction, "dd 'de' MMMM", { locale: ptBR });
   }
 
   async function loadTransactions() {
@@ -73,37 +72,29 @@ export function Dashboard() {
       let entriesTotal = 0;
       let expensiveTotal = 0;
 
-      const transactionsFormatted: DataListProps[] = transactions
-        .map((item: DataListProps) => {
+      const transactionsFormatted: DataListProps[] = transactions.map((item: DataListProps) => {
+        if (item.type === 'positive') {
+          entriesTotal += Number(item.amount);
+        } else {
+          expensiveTotal += Number(item.amount);
+        }
 
-          if (item.type === 'positive') {
-            entriesTotal += Number(item.amount);
-          } else {
-            expensiveTotal += Number(item.amount);
-          }
-
-          const amount = Number(item.amount)
-            .toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            });
-
-          const date = Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit'
-          }).format(new Date(item.date));
-
-          return {
-            id: item.id,
-            name: item.name,
-            amount,
-            type: item.type,
-            category: item.category,
-            date,
-          }
-
+        const amount = Number(item.amount).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
         });
+
+        const date = format(parseISO(item.date), 'dd/MM/yyyy', { locale: ptBR });
+
+        return {
+          id: item.id,
+          name: item.name,
+          amount,
+          type: item.type,
+          category: item.category,
+          date,
+        };
+      });
 
       setTransactions(transactionsFormatted);
 
@@ -246,6 +237,7 @@ export function Dashboard() {
                 title="Total"
                 amount={highlightData.total.amount}
                 lastTransaction={highlightData.total.lastTransaction}
+                isNegative={Number(highlightData.total.amount.replace(/[^\d.-]/g, '')) < 0} // Verifica se o total é negativo
               />
             </HighlightCards>
 

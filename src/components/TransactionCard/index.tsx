@@ -39,6 +39,12 @@ export function TransactionCard({ data, onDelete }: Props) {
         {data.name}
       </Title>
 
+      <TouchableOpacity onPress={onDelete}>
+        <DeleteButton>
+          <DeleteIcon name="trash" />
+        </DeleteButton>
+      </TouchableOpacity>
+
       <Amount type={data.type}>
         {data.type === 'negative' && '- '}
         {data.amount}
@@ -55,13 +61,11 @@ export function TransactionCard({ data, onDelete }: Props) {
         <Date>
           {data.date}
         </Date>
+
+        
       </Footer>
 
-      <TouchableOpacity onPress={onDelete}>
-        <DeleteButton>
-          <DeleteIcon name="trash" /> 
-        </DeleteButton>
-      </TouchableOpacity>
+      
     </Container>
-  )
+  );
 }

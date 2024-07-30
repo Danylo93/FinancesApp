@@ -23,6 +23,9 @@ import { CategorySelectButton } from '../../components/Form/CategorySelectButton
 
 import { CategorySelect } from '../CategorySelect';
 
+import { format, parseISO, isFuture } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 import {
   Container,
   Header,
@@ -97,7 +100,7 @@ export function Register() {
     setDatePickerVisible(false);
     if (date) {
       const currentDate = new Date();
-      if (date > currentDate) {
+      if (isFuture(date)) {
         Alert.alert('Data inválida', 'Não é permitido selecionar uma data futura.');
         return;
       }
@@ -178,7 +181,7 @@ export function Register() {
 
             <Text>Selecione a Data da Transação</Text>
             <DateButton onPress={handleOpenDatePicker}>
-              <Text>{selectedDate.toLocaleDateString('pt-BR')}</Text>
+              <Text>{format(selectedDate, 'dd MMMM yyyy', { locale: ptBR })}</Text>
             </DateButton>
 
             {datePickerVisible && (

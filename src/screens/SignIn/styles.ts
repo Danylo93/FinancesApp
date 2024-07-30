@@ -38,11 +38,12 @@ export const SignInTitle = styled.Text`
 `;
 
 export const InputContainer = styled.View`
-  background-color: ${({ theme }) => theme.colors.shape};
+ 
   padding: 20px;
   border-radius: 8px;
   width: 100%; 
   max-width: 400px; 
+  
 `;
 
 export const EmailInput = styled(TextInput)`

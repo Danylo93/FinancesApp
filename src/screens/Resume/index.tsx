@@ -1,27 +1,18 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { ActivityIndicator, Dimensions, View, Text , StyleSheet} from 'react-native';
+import { ActivityIndicator, Dimensions, View, Text, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PieChart } from 'react-native-chart-kit';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { useFocusEffect } from '@react-navigation/native'; 
+import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'styled-components';
 import { HistoryCard } from '../../components/HistoryCard';
 import MonthSelect from '../../components/MonthSelect';  
 import YearSelect from '../../components/YearSelect';    
-
-import {
-  Container,
-  Header,
-  Title,
-  Content,
-  ChartContainer,
-  LoadContainer
-} from './styles';
-
 import { categories } from '../../utils/categories';
 import AuthContext from '../../hooks/auth';
+import PieChartWithLabels from '../../components/PieChartWithLabels';
+import { Container, LoadContainer, Content, Header, Title } from './styles';
 
 interface TransactionData {
   type: 'positive' | 'negative';
@@ -98,7 +89,7 @@ export function Resume() {
           color: category.color,
           total: categorySum,
           totalFormatted,
-          percent
+          percent,
         });
       }
     });
@@ -114,8 +105,8 @@ export function Resume() {
   return (
     <Container>
       <Header>
-        <Title>Resumo por categoria</Title>
-      </Header>
+          <Title>Resumo das minhas Transações</Title>
+        </Header>
       {
         isLoading ?
           <LoadContainer>
@@ -149,33 +140,16 @@ export function Resume() {
             {
               totalByCategories.length > 0 ? (
                 <>
-                  <ChartContainer>
-                    <PieChart
-                      data={totalByCategories.map(category => ({
-                        name: category.name,
-                        population: category.total,
-                        color: category.color,
-                        legendFontColor: theme.colors.text,
-                        legendFontSize: RFValue(15),
-                      }))}
-                      width={screenWidth - 48}
-                      height={220}
-                      chartConfig={{
-                        backgroundColor: theme.colors.background,
-                        backgroundGradientFrom: theme.colors.background,
-                        backgroundGradientTo: theme.colors.background,
-                        color: (opacity = 1) => theme.colors.primary,
-                        labelColor: (opacity = 1) => theme.colors.text,
-                        style: {
-                          borderRadius: 16,
-                        },
-                      }}
-                      accessor="population"
-                      backgroundColor="transparent"
-                      paddingLeft="15"
-                      absolute
-                    />
-                  </ChartContainer>
+                  <PieChartWithLabels
+                    data={totalByCategories.map(category => ({
+                      value: category.total,
+                      color: category.color,
+                      key: category.key,
+                      totalFormatted: category.totalFormatted,
+                      percent: category.percent,
+                      name: category.name,
+                    }))}
+                  />
 
                   {
                     totalByCategories.map(item => (

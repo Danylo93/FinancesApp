@@ -16,14 +16,16 @@ export function AppRoutes(){
   return(
     <Navigator
     
-      tabBarOptions={{
+      screenOptions={{
         headerShown: false,
-        activeTintColor: theme.colors.secondary,
-        inactiveTintColor: theme.colors.text,
-        labelPosition: 'beside-icon',
-        style: {
+        
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.text,
+        tabBarLabelPosition: 'beside-icon',
+        
+        tabBarStyle: {
           paddingVertical: Platform.OS === 'ios' ? 20 : 0,
-          height: 88
+          height: 50
         }
       }}
     >
@@ -61,6 +63,7 @@ export function AppRoutes(){
         name="Resumo"
         component={Resume}
         options={{
+          
           headerShown: false,
           tabBarIcon: (({ size, color }) => (
             <MaterialIcons
