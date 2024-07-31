@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StatusBar,
   TextInput,
   Text,
@@ -11,15 +10,10 @@ import {
   ScrollView
 } from 'react-native';
 import { useTheme } from 'styled-components';
-import * as WebBrowser from 'expo-web-browser';
 import AuthContext from '../../hooks/auth';
+import Toast from 'react-native-toast-message';
 import {
-  Container,
-  Header,
-  TitleWrapper,
   Title,
-  SignInTitle,
-  FooterWrapper,
   EmailInput,
   PasswordInput,
   InputContainer
@@ -32,7 +26,6 @@ const backgrounds = [
   require('../../assets/fundo2.jpg'),
 ];
 
-WebBrowser.maybeCompleteAuthSession();
 
 export function SignIn({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -58,23 +51,52 @@ export function SignIn({ navigation }) {
   async function handleSignInWithEmail() {
     setIsLoading(true);
     try {
-      await loginUser(email, password);
+      const result = await loginUser(email, password);
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          position: 'top',
+          text1: 'Login feito com sucesso!',
+          text2: 'Você está agora logado.',
+          visibilityTime: 4000,
+        });
+        // Navegue para a tela principal ou onde for necessário
+      } else {
+        throw new Error('Credenciais inválidas');
+      }
     } catch (error) {
-      Alert.alert('Erro de login', 'Credenciais inválidas.');
+      Toast.show({
+        type: 'error',
+        position: 'top',
+        text1: 'Dados inválidos',
+        text2: 'Verifique seu e-mail e senha e tente novamente.',
+        visibilityTime: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
   }
   
-
   async function handleSignUp() {
     setIsLoading(true);
     try {
       const user = await createUser({ email, password, name });
-      Alert.alert('Registro bem-sucedido', `Usuário ${user.name} registrado com sucesso`);
+      Toast.show({
+        type: 'success',
+        position: 'top',
+        text1: 'Cadastro realizado!',
+        text2: `Usuário ${name} registrado com sucesso.`,
+        visibilityTime: 4000,
+      });
       setIsRegistering(false);
     } catch (error) {
-      Alert.alert('Erro ao registrar', error.message);
+      Toast.show({
+        type: 'error',
+        position: 'top',
+        text1: 'Erro ao registrar',
+        text2: error.message,
+        visibilityTime: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -185,6 +207,7 @@ export function SignIn({ navigation }) {
             </InputContainer>
           
         </ScrollView>
+        <Toast />
       </ImageBackground>
     </View>
   );

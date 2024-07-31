@@ -12,11 +12,11 @@
     "production": {
       "android": {
         "releaseChannel": "production",
-        "buildType": "app-bundle"
+        "buildType": "app-bundle" 
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {} 
   }
 }

@@ -2,9 +2,8 @@
   "expo": {
     "name": "FinancesApp",
     "slug": "FinancesApp",
-    "scheme": "FinancesApp",
+    "scheme": "financesapp",
     "version": "1.0.0",
-    "sdkVersion": "49.0.0",
     "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

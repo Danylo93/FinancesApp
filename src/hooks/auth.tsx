@@ -5,17 +5,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface AuthContextType {
   user: any;
   loading: boolean;
-  loginUser: (email: string, password: string) => Promise<boolean>;
-  createUser: (userData: UserData) => Promise<void>;
-  logoutUser: () => Promise<void>;
+  loginUser: (email: string, password: string) => Promise<string>;
+  createUser: (userData: UserData) => Promise<string>;
+  logoutUser: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  loginUser: async () => false,
-  createUser: async () => {},
-  logoutUser: async () => {},
+  loginUser: async () => 'Falha ao fazer login',
+  createUser: async () => 'Falha ao criar usuário',
+  logoutUser: async () => 'Falha ao fazer logout',
 });
 
 interface UserData {
@@ -46,45 +46,49 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     loadStoredUser();
   }, []);
 
-  const loginUser = async (email: string, password: string): Promise<boolean> => {
+  const loginUser = async (email: string, password: string): Promise<string> => {
     try {
       const response = await login(email, password);
       if (response && response.user) {
         setUser(response.user);
         await AsyncStorage.setItem('user', JSON.stringify(response.user));
         await AsyncStorage.setItem('token', response.token); // Armazena o token também
-        return true;
+        return 'Login realizado com sucesso';
       } else {
         throw new Error('Dados de resposta inválidos');
       }
     } catch (error) {
       console.error('Login failed', error);
-      return false;
+      return error.message || 'Falha ao fazer login';
     }
   };
 
-  const createUser = async (userData: UserData) => {
+  const createUser = async (userData: UserData): Promise<string> => {
     try {
       const response = await register(userData.name, userData.email, userData.password || '');
       if (response && response.user) {
         setUser(response.user);
         await AsyncStorage.setItem('user', JSON.stringify(response.user));
         await AsyncStorage.setItem('token', response.token); // Armazena o token também
+        return 'Cadastro realizado com sucesso';
       } else {
         throw new Error('Dados de resposta inválidos');
       }
     } catch (error) {
-      throw new Error('User creation failed');
+      console.error('User creation failed', error);
+      return error.message || 'Falha ao criar usuário';
     }
   };
 
-  const logoutUser = async () => {
+  const logoutUser = async (): Promise<string> => {
     try {
       setUser(null);
       await AsyncStorage.removeItem('user');
       await AsyncStorage.removeItem('token'); // Remove o token também
+      return 'Logout realizado com sucesso';
     } catch (error) {
-      throw new Error('Logout failed');
+      console.error('Logout failed', error);
+      return error.message || 'Falha ao fazer logout';
     }
   };
 
