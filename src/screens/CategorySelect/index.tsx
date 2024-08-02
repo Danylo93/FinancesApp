@@ -14,6 +14,7 @@ import {
 } from './styles';
 import { Feather } from '@expo/vector-icons';
 import { FlatList } from 'react-native';
+import theme from '../../global/styles/theme';
 
 interface Category {
   key: string;
@@ -40,7 +41,7 @@ export function CategorySelect({
     <Container>
       <Header>
         <CloseButton onPress={closeSelectCategory}>
-        <Feather name="x" size={24} color="white" />
+        <Feather name="x" size={24} color={theme.colors.text} />
         </CloseButton>
         <Title>Categoria</Title>
       </Header>

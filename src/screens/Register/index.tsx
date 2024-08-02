@@ -1,27 +1,29 @@
-import React, { useContext, useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
   View,
-  Text
+  Text,
+  StyleSheet,
+  TouchableOpacity
 } from 'react-native';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 import { useForm, Controller } from 'react-hook-form';
-import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { InputForm } from '../../components/Form/InputForm';
 import { Button } from '../../components/Form/Button';
 import { TransactionTypeButton } from '../../components/Form/TransactionTypeButton';
 import { CategorySelectButton } from '../../components/Form/CategorySelectButton';
 import { CategorySelect } from '../CategorySelect';
-import { format, parseISO, isFuture } from 'date-fns';
+import { format, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TextInputMask } from 'react-native-masked-text'; // Importa o componente para máscara
+import { TextInputMask } from 'react-native-masked-text';
+import AuthContext from '../../hooks/auth';
 
 import {
   Container,
@@ -31,8 +33,8 @@ import {
   Fields,
   TransactionsTypes,
   DateButton,
+  DateText,
 } from './styles';
-import AuthContext from '../../hooks/auth';
 
 interface FormData {
   name: string;
@@ -48,12 +50,11 @@ const schema = Yup.object().shape({
     .string()
     .required('O valor é obrigatório')
     .test('is-valid-amount', 'Informe um valor válido', (value) => {
-      // Verifica se o valor corresponde ao formato monetário esperado
       return /^(\d{1,3}(\.\d{3})*|\d+)(,\d{2})?$/.test(value);
     }),
 });
 
-export function Register() {
+export function Register({ visible, onClose }: { visible: boolean, onClose: () => void }) {
   const [transactionType, setTransactionType] = useState('');
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -64,8 +65,6 @@ export function Register() {
     key: 'category',
     name: 'Categoria'
   });
-
-  const navigation = useNavigation();
 
   const {
     control,
@@ -98,7 +97,6 @@ export function Register() {
   function handleDateChange(event: any, date?: Date) {
     setDatePickerVisible(false);
     if (date) {
-      const currentDate = new Date();
       if (isFuture(date)) {
         Alert.alert('Data inválida', 'Não é permitido selecionar uma data futura.');
         return;
@@ -114,13 +112,16 @@ export function Register() {
     if (category.key === 'category')
       return Alert.alert('Selecione a categoria');
 
-    // Substitua vírgula por ponto no valor
-    const formattedAmount = form.amount.replace(',', '.');
+    const formattedAmount = parseFloat(form.amount.replace(/\./g, '').replace(',', '.'));
+
+    if (isNaN(formattedAmount)) {
+      return Alert.alert('Valor inválido', 'Por favor, insira um valor numérico válido.');
+    }
 
     const newTransaction = {
       id: String(uuid.v4()),
       name: form.name,
-      amount: formattedAmount, // Use o valor formatado
+      amount: formattedAmount.toString(),
       type: transactionType,
       category: category.key,
       date: selectedDate.toISOString()
@@ -128,7 +129,6 @@ export function Register() {
 
     try {
       const dataKey = `@gofinances:transactions_user:${user?.id}`;
-
       const data = await AsyncStorage.getItem(dataKey);
       const currentData = data ? JSON.parse(data) : [];
 
@@ -147,7 +147,7 @@ export function Register() {
       });
       setSelectedDate(new Date());
 
-      navigation.navigate('Dashboard');
+      onClose(); // Fecha o modal ao registrar a transação
 
     } catch (error) {
       console.log(error);
@@ -156,102 +156,107 @@ export function Register() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <Container>
-        <Header>
-          <Title>Cadastro</Title>
-        </Header>
+    <Modal visible={visible} animationType="slide">
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <Container>
+          <Header>
+            <Title>Adicionar Transação</Title>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>X</Text>
+            </TouchableOpacity>
+          </Header>
 
-        <Form>
-          <Fields>
-            <InputForm
-              name="name"
-              control={control}
-              placeholder="Nome"
-              autoCapitalize="sentences"
-              autoCorrect={false}
-              error={errors.name && errors.name.message}
-            />
+          <Form>
+            <Fields>
+              <InputForm
+                name="name"
+                control={control}
+                placeholder="Nome"
+                autoCapitalize="sentences"
+                autoCorrect={false}
+                error={errors.name && errors.name.message}
+              />
 
-            <Controller
-              control={control}
-              name="amount"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInputMask
-                  type={'money'}
-                  options={{
-                    precision: 2,
-                    separator: ',',
-                    delimiter: '.',
-                    unit: '',
-                    suffixUnit: ''
-                  }}
-                  placeholder="Preço"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  keyboardType="numeric"
-                  style={{ ...styles.input, marginBottom: 10 }}
+              <Controller
+                control={control}
+                name="amount"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInputMask
+                    type={'money'}
+                    options={{
+                      precision: 2,
+                      separator: ',',
+                      delimiter: '.',
+                      unit: '',
+                      suffixUnit: ''
+                    }}
+                    placeholder="Preço"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    keyboardType="numeric"
+                    style={styles.input}
+                  />
+                )}
+              />
+              {errors.amount && <Text style={styles.errorText}>{errors.amount.message}</Text>}
+
+              <Text>Selecione a Data da Transação</Text>
+              <DateButton onPress={handleOpenDatePicker}>
+                <DateText>{format(selectedDate, 'dd MMMM yyyy', { locale: ptBR })}</DateText>
+              </DateButton>
+
+              {datePickerVisible && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
                 />
               )}
+
+              <TransactionsTypes>
+                <TransactionTypeButton
+                  type="up"
+                  title="Receita"
+                  onPress={() => handleTransactionsTypeSelect('positive')}
+                  isActive={transactionType === 'positive'}
+                />
+                <TransactionTypeButton
+                  type="down"
+                  title="Despesa"
+                  onPress={() => handleTransactionsTypeSelect('negative')}
+                  isActive={transactionType === 'negative'}
+                />
+              </TransactionsTypes>
+
+              <CategorySelectButton
+                title={category.name}
+                onPress={handleOpenSelectCategoryModal}
+              />
+            </Fields>
+
+            <Button
+              title="Enviar"
+              onPress={handleSubmit(handleRegister)}
             />
-            {errors.amount && <Text style={styles.errorText}>{errors.amount.message}</Text>}
+          </Form>
 
-            <Text>Selecione a Data da Transação</Text>
-            <DateButton onPress={handleOpenDatePicker}>
-              <Text>{format(selectedDate, 'dd MMMM yyyy', { locale: ptBR })}</Text>
-            </DateButton>
-
-            {datePickerVisible && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-                maximumDate={new Date()} // Impede a seleção de datas futuras
-              />
-            )}
-
-            <TransactionsTypes>
-              <TransactionTypeButton
-                type="up"
-                title="Receita"
-                onPress={() => handleTransactionsTypeSelect('positive')}
-                isActive={transactionType === 'positive'}
-              />
-              <TransactionTypeButton
-                type="down"
-                title="Despesa"
-                onPress={() => handleTransactionsTypeSelect('negative')}
-                isActive={transactionType === 'negative'}
-              />
-            </TransactionsTypes>
-
-            <CategorySelectButton
-              title={category.name}
-              onPress={handleOpenSelectCategoryModal}
+          <Modal visible={categoryModalOpen}>
+            <CategorySelect
+              category={category}
+              setCategory={setCategory}
+              closeSelectCategory={handleCloseSelectCategoryModal}
             />
-          </Fields>
-
-          <Button
-            title="Enviar"
-            onPress={handleSubmit(handleRegister)}
-          />
-        </Form>
-
-        <Modal visible={categoryModalOpen}>
-          <CategorySelect
-            category={category}
-            setCategory={setCategory}
-            closeSelectCategory={handleCloseSelectCategoryModal}
-          />
-        </Modal>
-      </Container>
-    </TouchableWithoutFeedback>
+          </Modal>
+        </Container>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   input: {
     height: 50,
     borderColor: '#E0E0E0',
@@ -262,10 +267,26 @@ const styles = {
     fontSize: 16,
     color: '#333333',
     width: '100%',
+    marginBottom: 10,
   },
   errorText: {
     color: 'red',
     fontSize: 14,
     marginBottom: 10,
   },
-};
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#333',
+  },
+});

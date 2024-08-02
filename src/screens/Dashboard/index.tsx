@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useContext, useEffect } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, Modal, TextInput, Button, View, Text } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl,TouchableOpacity, Modal, TextInput, Button, View, Text, ScrollView, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from 'styled-components';
@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale';
 import { HighlightCard } from '../../components/HighlightCard';
 import { TransactionCard, TransactionCardProps } from '../../components/TransactionCard';
 import { TextInputMask } from 'react-native-masked-text'; // Importa o componente para máscara
+import { MaterialIcons } from '@expo/vector-icons'; // Importa o ícone
 
 import {
   Container,
@@ -16,6 +17,7 @@ import {
   UserInfo,
   Photo,
   User,
+  HighlightCardTotal,
   UserGreeting,
   UserName,
   Icon,
@@ -30,6 +32,8 @@ import {
   ModalTitle,
 } from './styles'; // Certifique-se de importar os novos estilos
 import AuthContext from '../../hooks/auth';
+import { useNavigation } from '@react-navigation/native';
+import { Register } from '../Register';
 
 export interface DataListProps extends TransactionCardProps {
   id: string;
@@ -47,6 +51,8 @@ interface HighlightData {
 }
 
 export function Dashboard() {
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<DataListProps[]>([]);
   const [highlightData, setHighlightData] = useState<HighlightData>({} as HighlightData);
@@ -54,9 +60,21 @@ export function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<DataListProps | null>(null); // Adiciona o estado para a transação sendo editada
   const [modalVisible, setModalVisible] = useState(false); // Adiciona o estado para a visibilidade do modal
   const [newAmount, setNewAmount] = useState(''); // Adiciona o estado para o novo valor
-
+  const [newName, setNewName] = useState('');
+  const navigation = useNavigation();
   const theme = useTheme();
   const { logoutUser, user } = useContext(AuthContext);
+  const { width } = Dimensions.get('window'); // Obtenha a largura da tela
+  const highlightCardWidth = width * 0.8;
+
+
+  const handleOpenRegisterModal = () => {
+    setRegisterModalVisible(true);
+  };
+
+  const handleCloseRegisterModal = () => {
+    setRegisterModalVisible(false);
+  };
 
   function getLastTransactionDate(
     collection: DataListProps[],
@@ -174,18 +192,20 @@ export function Dashboard() {
         const dataKey = `@gofinances:transactions_user:${user?.id}`;
         const response = await AsyncStorage.getItem(dataKey);
         const transactions = response ? JSON.parse(response) : [];
-
+  
+        // Remove a formatação de moeda para converter para número
+        const cleanAmount = newAmount.replace(/[^\d.,-]/g, '').replace(',', '.');
+        const amount = parseFloat(cleanAmount);
+  
         const updatedTransactions = transactions.map((transaction: DataListProps) => {
           if (transaction.id === editingTransaction.id) {
-            // Remove a formatação de moeda para converter para número
-            const amount = parseFloat(newAmount.replace(/[^\d.,-]/g, '').replace(',', '.'));
-            return { ...transaction, amount: amount.toString() };
+            return { ...transaction, amount: amount.toString(), name: newName };
           }
           return transaction;
         });
-
+  
         await AsyncStorage.setItem(dataKey, JSON.stringify(updatedTransactions));
-
+  
         loadTransactions();
         setModalVisible(false);
       } catch (error) {
@@ -194,6 +214,7 @@ export function Dashboard() {
       }
     }
   }
+  
 
   useEffect(() => {
     loadTransactions();
@@ -222,9 +243,14 @@ export function Dashboard() {
 
   const onEdit = (transaction: DataListProps) => {
     setEditingTransaction(transaction);
+    setNewName(transaction.name);
     setNewAmount(transaction.amount); // Preenche o valor atual no estado
     setModalVisible(true);
   };
+
+  function handleAddTransaction(){
+    navigation.navigate('Cadastrar')
+  }
 
   return (
     <Container>
@@ -249,27 +275,40 @@ export function Dashboard() {
         </LoadContainer>
       ) : (
         <>
-          <HighlightCards>
+        <HighlightCards>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={highlightCardWidth} // Define o intervalo de snap
+            decelerationRate="fast" // Ajusta a velocidade de desaceleração
+          >
             <HighlightCard
               title="Entradas"
               amount={highlightData.entries.amount}
               lastTransaction={highlightData.entries.lastTransaction}
               type="up"
+              style={{ width: highlightCardWidth }} // Define a largura do card
             />
             <HighlightCard
               title="Saídas"
               amount={highlightData.expensives.amount}
               lastTransaction={highlightData.expensives.lastTransaction}
               type="down"
+              style={{ width: highlightCardWidth }} // Define a largura do card
             />
+            <HighlightCardTotal style={{ width: highlightCardWidth }}>
             <HighlightCard
               title="Total"
               amount={highlightData.total.amount}
               lastTransaction={highlightData.total.lastTransaction}
               type="total"
+              isNegative={Number(highlightData.total.amount.replace(/[^\d.-]/g, '')) < 0}
+              style={{ width: highlightCardWidth }} // Define a largura do card
             />
-          </HighlightCards>
-
+            </HighlightCardTotal>
+          </ScrollView>
+        </HighlightCards>
           <Transactions>
             <Title>Histórico de Transações</Title>
             <FlatList
@@ -300,7 +339,7 @@ export function Dashboard() {
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
-                  onRefresh={() => loadTransactions()}
+                  onRefresh={loadTransactions}
                 />
               }
             />
@@ -308,36 +347,58 @@ export function Dashboard() {
         </>
       )}
 
-      {/* Modal de edição */}
+      {/* Modal para edição de transações */}
       <Modal
         transparent={true}
-        animationType="slide"
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        animationType="slide"
       >
-        <ModalBackground>
-          <ModalContainer>
-            <ModalContent>
-              <ModalTitle>Editar Valor da Transação</ModalTitle>
-              <TextInputMask
-                type={'money'}
-                value={newAmount}
-                onChangeText={setNewAmount}
-                style={{
-                  borderBottomWidth: 1,
-                  borderColor: '#ccc',
-                  padding: 10,
-                  marginBottom: 20,
-                  fontSize: 18,
-                }}
-                placeholder="Novo valor"
-              />
-              <Button title="Salvar" onPress={handleEditTransaction} />
-              <Button title="Cancelar" onPress={() => setModalVisible(false)} color="#f00" />
-            </ModalContent>
-          </ModalContainer>
-        </ModalBackground>
+        <ModalContainer>
+          <ModalBackground >
+          <ModalContent>
+            <ModalTitle>Editar Transação</ModalTitle>
+            <TextInput
+              placeholder="Nome"
+              value={newName}
+              onChangeText={setNewName}
+              style={{ marginBottom: 15, borderBottomWidth: 1, borderColor: '#ccc', padding: 10 }}
+            />
+            <TextInputMask
+              type={'money'}
+              value={newAmount}
+              onChangeText={setNewAmount}
+              placeholder="Valor"
+              style={{ marginBottom: 15, borderBottomWidth: 1, borderColor: '#ccc', padding: 10 }}
+            />
+            <Button
+              title="Salvar"
+              onPress={handleEditTransaction}
+            />
+            <Button
+              title="Cancelar"
+              onPress={() => setModalVisible(false)}
+              color="#ff6f61"
+            />
+          </ModalContent>
+          </ModalBackground>
+        </ModalContainer>
       </Modal>
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: 30,
+          right: 30,
+          backgroundColor: theme.colors.primary,
+          borderRadius: 50,
+          padding: 15,
+          elevation: 10,
+        }}
+        onPress={handleOpenRegisterModal}
+      >
+        <MaterialIcons name="add" size={15} color="#fff" />
+      </TouchableOpacity>
+      <Register visible={registerModalVisible} onClose={handleCloseRegisterModal} />
+
     </Container>
   );
 }

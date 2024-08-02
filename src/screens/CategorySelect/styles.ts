@@ -32,7 +32,7 @@ export const CloseButton = styled.TouchableOpacity`
 
 export const Title = styled.Text`
   font-family: ${({ theme }) => theme.fonts.regular};
-  color: ${({ theme }) => theme.colors.shape};
+  color: ${({ theme }) => theme.colors.text_dark};
   font-size: ${RFValue(18)}px;
 `;
 

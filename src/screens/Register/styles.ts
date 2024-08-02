@@ -1,5 +1,6 @@
 import styled from 'styled-components/native';
 import { RFValue } from 'react-native-responsive-fontsize';
+import theme from '../../global/styles/theme';
 
 export const Container = styled.View`
   flex: 1;
@@ -48,4 +49,9 @@ export const DateButton = styled.TouchableOpacity`
   margin-top: 10px;
   align-items: center;
   justify-content: center;
+`;
+
+export const DateText = styled.Text`
+  font-size: 16px;
+  color: ${theme.colors.text_dark};
 `;

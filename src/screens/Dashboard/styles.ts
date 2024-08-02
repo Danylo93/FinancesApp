@@ -70,17 +70,16 @@ export const Icon = styled(Feather)`
   font-size: ${RFValue(24)}px;
 `;
 
-export const HighlightCards = styled.ScrollView.attrs({
-  horizontal: true,
-  showsHorizontalScrollIndicator: false,
-  contentContainerStyle: { paddingHorizontal: 24 }
-})`
+export const HighlightCards = styled.View`
   width: 100%;
-
+  margin-start: ${RFPercentage(4)}px;
   position: absolute;
   margin-top: ${RFPercentage(20)}px;
 `;
 
+export const HighlightCardTotal = styled.View`
+  margin-end: ${RFPercentage(4)}px; 
+`;
 export const Transactions = styled.View`
   flex: 1%;
   padding: 0 24px;
@@ -112,21 +111,25 @@ export const LoadContainer = styled.View`
 
 export const ModalBackground = styled.View`
   flex: 1;
+  width: 100%;
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.5);
 `;
 
 export const ModalContainer = styled.View`
-  width: 80%;
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 20px;
+  flex: 1;
+  
+  justify-content: center;
   align-items: center;
 `;
 
 export const ModalContent = styled.View`
-  width: 100%;
+  width: 80%;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  elevation: 5;
 `;
 
 export const ModalTitle = styled.Text`
@@ -134,4 +137,17 @@ export const ModalTitle = styled.Text`
   font-weight: bold;
   margin-bottom: 15px;
   text-align: center;
+`;
+
+export const CategoryButton = styled.TouchableOpacity<{ isSelected: boolean }>`
+  background: ${({ isSelected, theme }) => isSelected ? theme.colors.primary : theme.colors.background};
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  align-items: center;
+`;
+
+export const CategoryButtonText = styled.Text`
+  color: ${({ theme }) => theme.colors.text};
 `;

@@ -18,7 +18,7 @@ const YearSelect: React.FC<YearSelectProps> = ({ selectedYear, onYearChange }) =
   useEffect(() => {
     if (scrollViewRef.current) {
       const yearWidth = 100; // Largura média do botão em pixels (ajuste conforme necessário)
-      const totalWidth = years.length * (yearWidth + 50); // Largura total dos anos
+      const totalWidth = years.length * (yearWidth + 150); // Largura total dos anos
       const offset = yearWidth * years.indexOf(selectedYear) - (Dimensions.get('window').width / 2 - yearWidth / 2);
       const maxOffset = Math.max(0, totalWidth - Dimensions.get('window').width); // Limita o deslocamento máximo
 

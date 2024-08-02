@@ -32,7 +32,7 @@ export function HighlightCard({
   isNegative = false
 }: Props) {
   // Formata o amount com base no valor recebido
-  const formattedAmount = isNegative ? `-${amount}` : amount;
+  const formattedAmount = isNegative ? `${amount}` : amount;
 
   return (
     <Container type={type} isNegative={isNegative}>
