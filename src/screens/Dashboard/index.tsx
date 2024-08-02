@@ -1,5 +1,5 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useContext, useEffect } from 'react';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, Modal, TextInput, Button, View, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from 'styled-components';
@@ -7,6 +7,8 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { HighlightCard } from '../../components/HighlightCard';
 import { TransactionCard, TransactionCardProps } from '../../components/TransactionCard';
+import { TextInputMask } from 'react-native-masked-text'; // Importa o componente para máscara
+
 import {
   Container,
   Header,
@@ -22,7 +24,11 @@ import {
   Title,
   LoadContainer,
   LogoutButton,
-} from './styles';
+  ModalContainer,
+  ModalBackground,
+  ModalContent,
+  ModalTitle,
+} from './styles'; // Certifique-se de importar os novos estilos
 import AuthContext from '../../hooks/auth';
 
 export interface DataListProps extends TransactionCardProps {
@@ -45,6 +51,9 @@ export function Dashboard() {
   const [transactions, setTransactions] = useState<DataListProps[]>([]);
   const [highlightData, setHighlightData] = useState<HighlightData>({} as HighlightData);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<DataListProps | null>(null); // Adiciona o estado para a transação sendo editada
+  const [modalVisible, setModalVisible] = useState(false); // Adiciona o estado para a visibilidade do modal
+  const [newAmount, setNewAmount] = useState(''); // Adiciona o estado para o novo valor
 
   const theme = useTheme();
   const { logoutUser, user } = useContext(AuthContext);
@@ -159,10 +168,37 @@ export function Dashboard() {
     }
   }
 
+  async function handleEditTransaction() {
+    if (editingTransaction) {
+      try {
+        const dataKey = `@gofinances:transactions_user:${user?.id}`;
+        const response = await AsyncStorage.getItem(dataKey);
+        const transactions = response ? JSON.parse(response) : [];
+
+        const updatedTransactions = transactions.map((transaction: DataListProps) => {
+          if (transaction.id === editingTransaction.id) {
+            // Remove a formatação de moeda para converter para número
+            const amount = parseFloat(newAmount.replace(/[^\d.,-]/g, '').replace(',', '.'));
+            return { ...transaction, amount: amount.toString() };
+          }
+          return transaction;
+        });
+
+        await AsyncStorage.setItem(dataKey, JSON.stringify(updatedTransactions));
+
+        loadTransactions();
+        setModalVisible(false);
+      } catch (error) {
+        console.error('Error editing transaction:', error);
+        Alert.alert("Erro", "Não foi possível editar a transação.");
+      }
+    }
+  }
+
   useEffect(() => {
     loadTransactions();
   }, []);
-
+  
   useFocusEffect(useCallback(() => {
     loadTransactions();
   }, []));
@@ -170,115 +206,138 @@ export function Dashboard() {
   function handleSignOut() {
     Alert.alert(
       "Confirmar Logout",
-      "Você tem certeza que deseja deslogar?",
+      "Você tem certeza que deseja sair?",
       [
         {
-          text: "Cancelar",
+          text: "Não",
           style: "cancel"
         },
         {
-          text: "Sair",
+          text: "Sim",
           onPress: () => logoutUser()
         }
       ]
     );
   }
 
-  // Refresh control handler
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadTransactions();
+  const onEdit = (transaction: DataListProps) => {
+    setEditingTransaction(transaction);
+    setNewAmount(transaction.amount); // Preenche o valor atual no estado
+    setModalVisible(true);
   };
 
   return (
     <Container>
-      {
-        isLoading ?
-          <LoadContainer>
-            <ActivityIndicator
-              color={theme.colors.primary}
-              size="large"
+      <Header>
+        <UserWrapper>
+          <UserInfo>
+            <Photo source={{ uri: user?.photo }} />
+            <User>
+              <UserGreeting>Olá,</UserGreeting>
+              <UserName>{user?.name}</UserName>
+            </User>
+          </UserInfo>
+          <LogoutButton onPress={handleSignOut}>
+            <Icon name="power" />
+          </LogoutButton>
+        </UserWrapper>
+      </Header>
+
+      {isLoading ? (
+        <LoadContainer>
+          <ActivityIndicator color={theme.colors.primary} size="large" />
+        </LoadContainer>
+      ) : (
+        <>
+          <HighlightCards>
+            <HighlightCard
+              title="Entradas"
+              amount={highlightData.entries.amount}
+              lastTransaction={highlightData.entries.lastTransaction}
+              type="up"
             />
-          </LoadContainer> :
-          <>
-            <Header>
-              <UserWrapper>
-                <UserInfo>
-                  <Photo
-                    source={{ uri: user?.imageUrl || 'https://picsum.photos/120' }}
-                  />
-                  <User>
-                    <UserGreeting>Olá,</UserGreeting>
-                    <UserName>{user?.name}</UserName>
-                  </User>
-                </UserInfo>
+            <HighlightCard
+              title="Saídas"
+              amount={highlightData.expensives.amount}
+              lastTransaction={highlightData.expensives.lastTransaction}
+              type="down"
+            />
+            <HighlightCard
+              title="Total"
+              amount={highlightData.total.amount}
+              lastTransaction={highlightData.total.lastTransaction}
+              type="total"
+            />
+          </HighlightCards>
 
-                <LogoutButton onPress={handleSignOut}>
-                  <Icon name="power" />
-                </LogoutButton>
-              </UserWrapper>
-            </Header>
+          <Transactions>
+            <Title>Histórico de Transações</Title>
+            <FlatList
+              data={transactions}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => (
+                <TransactionCard
+                  data={item}
+                  onDelete={() => {
+                    Alert.alert(
+                      "Confirmar Exclusão",
+                      "Você tem certeza que deseja excluir esta transação?",
+                      [
+                        {
+                          text: "Cancelar",
+                          style: "cancel"
+                        },
+                        {
+                          text: "Excluir",
+                          onPress: () => handleDeleteTransaction(item.id)
+                        }
+                      ]
+                    );
+                  }}
+                  onEdit={() => onEdit(item)} // Adiciona a funcionalidade de edição
+                />
+              )}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={() => loadTransactions()}
+                />
+              }
+            />
+          </Transactions>
+        </>
+      )}
 
-            <HighlightCards>
-              <HighlightCard
-                type="up"
-                title="Entradas"
-                amount={highlightData.entries.amount}
-                lastTransaction={highlightData.entries.lastTransaction}
+      {/* Modal de edição */}
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <ModalBackground>
+          <ModalContainer>
+            <ModalContent>
+              <ModalTitle>Editar Valor da Transação</ModalTitle>
+              <TextInputMask
+                type={'money'}
+                value={newAmount}
+                onChangeText={setNewAmount}
+                style={{
+                  borderBottomWidth: 1,
+                  borderColor: '#ccc',
+                  padding: 10,
+                  marginBottom: 20,
+                  fontSize: 18,
+                }}
+                placeholder="Novo valor"
               />
-              <HighlightCard
-                type="down"
-                title="Saídas"
-                amount={highlightData.expensives.amount}
-                lastTransaction={highlightData.expensives.lastTransaction}
-              />
-              <HighlightCard
-                type="total"
-                title="Total"
-                amount={highlightData.total.amount}
-                lastTransaction={highlightData.total.lastTransaction}
-                isNegative={Number(highlightData.total.amount.replace(/[^\d.-]/g, '')) < 0} // Verifica se o total é negativo
-              />
-            </HighlightCards>
-
-            <Transactions>
-              <Title>Histórico de Transações</Title>
-
-              <FlatList
-                data={transactions}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <TransactionCard
-                    data={item}
-                    onDelete={() => {
-                      Alert.alert(
-                        "Confirmar Exclusão",
-                        "Você tem certeza que deseja excluir esta transação?",
-                        [
-                          {
-                            text: "Cancelar",
-                            style: "cancel"
-                          },
-                          {
-                            text: "Excluir",
-                            onPress: () => handleDeleteTransaction(item.id)
-                          }
-                        ]
-                      );
-                    }}
-                  />
-                )}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    colors={[theme.colors.primary]} // Customize the refresh control color
-                  />
-                }
-              />
-            </Transactions>
-          </>
-      }
+              <Button title="Salvar" onPress={handleEditTransaction} />
+              <Button title="Cancelar" onPress={() => setModalVisible(false)} color="#f00" />
+            </ModalContent>
+          </ModalContainer>
+        </ModalBackground>
+      </Modal>
     </Container>
   );
 }

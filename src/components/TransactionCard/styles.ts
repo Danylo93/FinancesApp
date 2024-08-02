@@ -12,7 +12,7 @@ export const Container = styled.View`
   border-radius: 5px;
   padding: 17px 24px;
   margin-bottom: 16px;
-  position: relative; /* Adiciona o posicionamento relativo para o botão de exclusão */
+  position: relative; /* Adicionado para permitir posicionamento absoluto dos botões */
 `;
 
 export const Title = styled.Text`
@@ -56,7 +56,6 @@ export const Date = styled.Text`
   color: ${({ theme }) => theme.colors.text};
 `;
 
-// Botão de exclusão posicionado no canto superior direito
 export const DeleteButton = styled.TouchableOpacity`
   position: absolute;
   right: 10px;
@@ -64,11 +63,21 @@ export const DeleteButton = styled.TouchableOpacity`
   background: ${({ theme }) => theme.colors.background};
   padding: 10px;
   border-radius: 50px;
-  justify-content: center;
-  align-items: center;
 `;
 
 export const DeleteIcon = styled(Ionicons)`
-  font-size: ${RFValue(20)}px;
+  color: ${({ theme }) => theme.colors.danger};
+`;
+
+export const EditButton = styled.TouchableOpacity`
+  position: absolute;
+  right: 50px; /* Ajusta para ficar na mesma linha que o botão de deletar */
+  top: 10px;
+  background: ${({ theme }) => theme.colors.background};
+  padding: 10px;
+  border-radius: 50px;
+`;
+
+export const EditIcon = styled(Ionicons)`
   color: ${({ theme }) => theme.colors.danger};
 `;

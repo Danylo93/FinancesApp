@@ -109,3 +109,29 @@ export const LoadContainer = styled.View`
   justify-content: center;
   align-items: center;
 `;
+
+export const ModalBackground = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+export const ModalContainer = styled.View`
+  width: 80%;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  align-items: center;
+`;
+
+export const ModalContent = styled.View`
+  width: 100%;
+`;
+
+export const ModalTitle = styled.Text`
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+`;

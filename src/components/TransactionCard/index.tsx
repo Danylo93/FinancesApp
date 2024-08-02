@@ -11,8 +11,10 @@ import {
   Icon,
   CategoryName,
   Date,
-  DeleteButton, // Importa o componente de botão de exclusão
-  DeleteIcon // Importa o ícone para o botão de exclusão
+  DeleteButton,
+  DeleteIcon,
+  EditButton, // Importa o componente de botão de edição
+  EditIcon // Importa o ícone para o botão de edição
 } from './styles';
 
 export interface TransactionCardProps {
@@ -25,10 +27,11 @@ export interface TransactionCardProps {
 
 interface Props {
   data: TransactionCardProps;
-  onDelete: () => void; // Adiciona a prop para exclusão
+  onDelete: () => void;
+  onEdit: () => void; // Adiciona a prop para edição
 }
 
-export function TransactionCard({ data, onDelete }: Props) {
+export function TransactionCard({ data, onDelete, onEdit }: Props) {
   const [category] = categories.filter(
     item => item.key === data.category
   );
@@ -38,12 +41,6 @@ export function TransactionCard({ data, onDelete }: Props) {
       <Title>
         {data.name}
       </Title>
-
-      <TouchableOpacity onPress={onDelete}>
-        <DeleteButton>
-          <DeleteIcon name="trash" />
-        </DeleteButton>
-      </TouchableOpacity>
 
       <Amount type={data.type}>
         {data.type === 'negative' && '- '}
@@ -61,11 +58,15 @@ export function TransactionCard({ data, onDelete }: Props) {
         <Date>
           {data.date}
         </Date>
-
-        
       </Footer>
 
-      
+      <EditButton onPress={onEdit}>
+        <EditIcon name="open" /> 
+      </EditButton>
+
+      <DeleteButton onPress={onDelete}>
+        <DeleteIcon name="trash" /> 
+      </DeleteButton>
     </Container>
-  );
+  )
 }
