@@ -26,7 +26,6 @@ const backgrounds = [
   require('../../assets/fundo2.jpg'),
 ];
 
-
 export function SignIn({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -35,6 +34,9 @@ export function SignIn({ navigation }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState(backgrounds[0]); // Inicialmente com a primeira imagem
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [nameError, setNameError] = useState('');
   const theme = useTheme();
   const { loginUser, createUser, user, loading } = useContext(AuthContext);
 
@@ -48,7 +50,70 @@ export function SignIn({ navigation }) {
     selectRandomBackground(); // Seleciona uma imagem aleatória ao carregar o componente
   }, [] );
 
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    if (text === '') {
+      setEmailError('O e-mail é obrigatório.');
+    } else if (!/\S+@\S+\.\S+/.test(text)) {
+      setEmailError('O e-mail deve ser válido.');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (text === '') {
+      setPasswordError('A senha é obrigatória.');
+    } else if (text.length < 6) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const handleNameChange = (text) => {
+    setName(text);
+    if (text === '') {
+      setNameError('O nome é obrigatório.');
+    } else {
+      setNameError('');
+    }
+  };
+
+  const validateFields = () => {
+    let isValid = true;
+
+    // Validação do email
+    if (!email) {
+      setEmailError('O e-mail é obrigatório.');
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      setEmailError('O e-mail deve ser válido.');
+      isValid = false;
+    }
+
+    // Validação da senha
+    if (!password) {
+      setPasswordError('A senha é obrigatória.');
+      isValid = false;
+    } else if (password.length < 6) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
+      isValid = false;
+    }
+
+    // Validação do nome
+    if (isRegistering && !name) {
+      setNameError('O nome é obrigatório.');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   async function handleSignInWithEmail() {
+    if (!validateFields()) return;
+
     setIsLoading(true);
     try {
       const result = await loginUser(email, password);
@@ -78,6 +143,8 @@ export function SignIn({ navigation }) {
   }
   
   async function handleSignUp() {
+    if (!validateFields()) return;
+
     setIsLoading(true);
     try {
       const user = await createUser({ email, password, name });
@@ -124,25 +191,28 @@ export function SignIn({ navigation }) {
                   <TextInput
                     placeholder="Nome"
                     value={name}
-                    onChangeText={setName}
+                    onChangeText={handleNameChange}
                     style={{ ...styles.input, marginBottom: 10 }}
                   />
-                  <EmailInput
+                  {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+                  <TextInput
                     placeholder="Email"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={handleEmailChange}
                     style={{ ...styles.input, marginBottom: 10 }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
+                  {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
                   <View style={styles.passwordContainer}>
-                    <PasswordInput
+                    <TextInput
                       placeholder="Senha"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={handlePasswordChange}
                       secureTextEntry={!showPassword}
                       style={{ ...styles.input, marginBottom: 10 }}
                     />
+                    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                       <Text style={styles.showPasswordText}>
                         {showPassword ? 'Ocultar Senha' : 'Mostrar Senha'}
@@ -166,22 +236,24 @@ export function SignIn({ navigation }) {
                 </>
               ) : (
                 <>
-                  <EmailInput
+                  <TextInput
                     placeholder="Email"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={handleEmailChange}
                     style={{ ...styles.input, marginBottom: 10 }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
+                  {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
                   <View style={styles.passwordContainer}>
-                    <PasswordInput
+                    <TextInput
                       placeholder="Senha"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={handlePasswordChange}
                       secureTextEntry={!showPassword}
                       style={{ ...styles.input, marginBottom: 10 }}
                     />
+                    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                       <Text style={styles.showPasswordText}>
                         {showPassword ? 'Ocultar Senha' : 'Mostrar Senha'}
@@ -220,34 +292,25 @@ const styles = {
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
   },
   imagemDeFundo: {
     flex: 1,
-    resizeMode: 'cover',
     justifyContent: 'center',
+    width: '100%',
   },
   titleWrapper: {
-    flex: 1,
-    justifyContent: 'center',
+    marginBottom: 30,
     alignItems: 'center',
-    marginBottom: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
     color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
-  formContainer: {
+  inputContainer: {
     width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 20,
-    opacity: 0.5,
-    elevation: 2,
   },
   input: {
     height: 50,
@@ -286,5 +349,10 @@ const styles = {
     padding: 10,
     textAlign: 'center',
     color: '#fff',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginBottom: 10,
   },
 };
