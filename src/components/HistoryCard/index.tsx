@@ -16,7 +16,8 @@ export function HistoryCard({
   title,
   amount,
   color
-}: Props){
+}: Props) {
+  // Verifique se o amount está formatado corretamente
   return(
     <Container color={color}>
       <Title>{title}</Title>

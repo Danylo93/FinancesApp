@@ -11,20 +11,17 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
-
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
 import { InputForm } from '../../components/Form/InputForm';
 import { Button } from '../../components/Form/Button';
 import { TransactionTypeButton } from '../../components/Form/TransactionTypeButton';
 import { CategorySelectButton } from '../../components/Form/CategorySelectButton';
-
 import { CategorySelect } from '../CategorySelect';
-
 import { format, parseISO, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TextInputMask } from 'react-native-masked-text'; // Importa o componente para máscara
 
 import {
   Container,
@@ -48,10 +45,12 @@ const schema = Yup.object().shape({
     .string()
     .required('Nome é obrigatório'),
   amount: Yup
-    .number()
-    .typeError('Informe um valor númerico')
-    .positive('O valor não pode ser negativo')
-    .required('O valor é obrigatório'),
+    .string()
+    .required('O valor é obrigatório')
+    .test('is-valid-amount', 'Informe um valor válido', (value) => {
+      // Verifica se o valor corresponde ao formato monetário esperado
+      return /^(\d{1,3}(\.\d{3})*|\d+)(,\d{2})?$/.test(value);
+    }),
 });
 
 export function Register() {
@@ -73,7 +72,7 @@ export function Register() {
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm({
+  } = useForm<FormData>({
     resolver: yupResolver(schema),
     defaultValues: {
       date: selectedDate,
@@ -115,10 +114,13 @@ export function Register() {
     if (category.key === 'category')
       return Alert.alert('Selecione a categoria');
 
+    // Substitua vírgula por ponto no valor
+    const formattedAmount = form.amount.replace(',', '.');
+
     const newTransaction = {
       id: String(uuid.v4()),
       name: form.name,
-      amount: form.amount,
+      amount: formattedAmount, // Use o valor formatado
       type: transactionType,
       category: category.key,
       date: selectedDate.toISOString()
@@ -171,13 +173,29 @@ export function Register() {
               error={errors.name && errors.name.message}
             />
 
-            <InputForm
-              name="amount"
+            <Controller
               control={control}
-              placeholder="Preço"
-              keyboardType="numeric"
-              error={errors.amount && errors.amount.message}
+              name="amount"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInputMask
+                  type={'money'}
+                  options={{
+                    precision: 2,
+                    separator: ',',
+                    delimiter: '.',
+                    unit: '',
+                    suffixUnit: ''
+                  }}
+                  placeholder="Preço"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="numeric"
+                  style={{ ...styles.input, marginBottom: 10 }}
+                />
+              )}
             />
+            {errors.amount && <Text style={styles.errorText}>{errors.amount.message}</Text>}
 
             <Text>Selecione a Data da Transação</Text>
             <DateButton onPress={handleOpenDatePicker}>
@@ -232,3 +250,22 @@ export function Register() {
     </TouchableWithoutFeedback>
   );
 }
+
+const styles = {
+  input: {
+    height: 50,
+    borderColor: '#E0E0E0',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#FFFFFF',
+    fontSize: 16,
+    color: '#333333',
+    width: '100%',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+};

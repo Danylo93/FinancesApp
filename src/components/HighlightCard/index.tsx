@@ -15,7 +15,7 @@ interface Props {
   title: string;
   amount: string;
   lastTransaction: string;
-  isNegative?: boolean; // Adiciona uma prop para determinar se o valor é negativo
+  isNegative?: boolean;
 }
 
 const icon = {
@@ -29,8 +29,11 @@ export function HighlightCard({
   title,
   amount,
   lastTransaction,
-  isNegative = false // Define valor padrão para isNegative
-}: Props){
+  isNegative = false
+}: Props) {
+  // Formata o amount com base no valor recebido
+  const formattedAmount = isNegative ? `-${amount}` : amount;
+
   return (
     <Container type={type} isNegative={isNegative}>
       <Header>
@@ -45,7 +48,7 @@ export function HighlightCard({
 
       <Footer>
         <Amount type={type}>
-          {amount}
+          {formattedAmount}
         </Amount>
         <LastTransaction type={type}>
           {lastTransaction}
