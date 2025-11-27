@@ -14,7 +14,8 @@ import {
   DeleteButton,
   DeleteIcon,
   EditButton, // Importa o componente de botão de edição
-  EditIcon // Importa o ícone para o botão de edição
+  EditIcon, // Importa o ícone para o botão de edição
+  BankNameText
 } from './styles';
 
 export interface TransactionCardProps {
@@ -29,9 +30,11 @@ interface Props {
   data: TransactionCardProps;
   onDelete: () => void;
   onEdit: () => void; // Adiciona a prop para edição
+  showBankName?: boolean;
+  bankName?: string;
 }
 
-export function TransactionCard({ data, onDelete, onEdit }: Props) {
+export function TransactionCard({ data, onDelete, onEdit, showBankName, bankName }: Props) {
   const [category] = categories.filter(
     item => item.key === data.category
   );
@@ -40,6 +43,9 @@ export function TransactionCard({ data, onDelete, onEdit }: Props) {
     <Container>
       <Title>
         {data.name}
+        {showBankName && bankName && (
+          <BankNameText> • {bankName}</BankNameText>
+        )}
       </Title>
 
       <Amount type={data.type}>

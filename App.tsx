@@ -5,6 +5,7 @@ import { ThemeProvider } from 'styled-components';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Routes } from './src/routes';
 import { AuthProvider } from './src/hooks/auth';
+import { BankingProvider } from './src/modules/banking/context/BankingContext';
 import theme from './src/global/styles/theme';
 
 export default function App() {
@@ -27,7 +28,9 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <AuthProvider>
-        <Routes />
+        <BankingProvider>
+          <Routes />
+        </BankingProvider>
       </AuthProvider>
     </ThemeProvider>
   );

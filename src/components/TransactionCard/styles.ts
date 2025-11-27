@@ -18,6 +18,15 @@ export const Container = styled.View`
 export const Title = styled.Text`
   font-family: ${({ theme }) => theme.fonts.regular};
   font-size: ${RFValue(14)}px;
+  flex-direction: row;
+  flex-wrap: wrap;
+`;
+
+export const BankNameText = styled.Text`
+  font-family: ${({ theme }) => theme.fonts.medium};
+  font-size: ${RFValue(12)}px;
+  color: ${({ theme }) => theme.colors.text};
+  margin-left: 4px;
 `;
 
 export const Amount = styled.Text<TransactionProps>`
@@ -66,7 +75,7 @@ export const DeleteButton = styled.TouchableOpacity`
 `;
 
 export const DeleteIcon = styled(Ionicons)`
-  color: ${({ theme }) => theme.colors.danger};
+  color: ${({ theme }) => theme.colors.attention};
 `;
 
 export const EditButton = styled.TouchableOpacity`
@@ -79,5 +88,5 @@ export const EditButton = styled.TouchableOpacity`
 `;
 
 export const EditIcon = styled(Ionicons)`
-  color: ${({ theme }) => theme.colors.danger};
+  color: ${({ theme }) => theme.colors.primary};
 `;

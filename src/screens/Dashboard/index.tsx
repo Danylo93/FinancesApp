@@ -34,6 +34,7 @@ import {
 import AuthContext from '../../hooks/auth';
 import { useNavigation } from '@react-navigation/native';
 import { Register } from '../Register';
+import BankingContext from '../../modules/banking/context/BankingContext';
 
 export interface DataListProps extends TransactionCardProps {
   id: string;
@@ -64,8 +65,10 @@ export function Dashboard() {
   const navigation = useNavigation();
   const theme = useTheme();
   const { logoutUser, user } = useContext(AuthContext);
+  const { banks } = useContext(BankingContext);
   const { width } = Dimensions.get('window'); // Obtenha a largura da tela
   const highlightCardWidth = width * 0.8;
+  const connectedBanksCount = banks.filter(b => b.isConnected).length;
 
 
   const handleOpenRegisterModal = () => {
@@ -397,6 +400,39 @@ export function Dashboard() {
       >
         <MaterialIcons name="add" size={15} color="#fff" />
       </TouchableOpacity>
+      
+      {connectedBanksCount > 0 && (
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            bottom: 30,
+            right: 100,
+            backgroundColor: theme.colors.secondary,
+            borderRadius: 50,
+            padding: 15,
+            elevation: 10,
+          }}
+          onPress={() => navigation.navigate('BankTransactions')}
+        >
+          <MaterialIcons name="account-balance" size={15} color="#fff" />
+        </TouchableOpacity>
+      )}
+      
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: 30,
+          left: 30,
+          backgroundColor: theme.colors.success,
+          borderRadius: 50,
+          padding: 15,
+          elevation: 10,
+        }}
+        onPress={() => navigation.navigate('BankSelection')}
+      >
+        <MaterialIcons name="link" size={15} color="#fff" />
+      </TouchableOpacity>
+      
       <Register visible={registerModalVisible} onClose={handleCloseRegisterModal} />
 
     </Container>
